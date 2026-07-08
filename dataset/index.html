@@ -1,0 +1,2305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dataset Insights - AI Suture Quality Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+    <style>
+        :root {
+            --color-bg: #f7f4ed;
+            --color-surface: #1a1a1a;
+            --color-text-primary: #1a1a1a;
+            --color-text-secondary: #5a5a5a;
+            --color-border: #1a1a1a;
+            --color-accent: #1a1a1a;
+            --color-accent-light: #ede9e0;
+            --color-cream-card: #faf8f4;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-2xl: 48px;
+            --spacing-3xl: 64px;
+            --radius: 0px;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --shadow: 5px 5px 0px #1a1a1a;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--color-bg);
+            color: var(--color-text-primary);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+
+        header {
+            margin-bottom: var(--spacing-3xl);
+            padding-bottom: var(--spacing-xl);
+            border-bottom: 3px solid var(--color-border);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: var(--spacing-sm);
+            text-transform: uppercase;
+        }
+
+        header p {
+            color: var(--color-text-secondary);
+            font-size: 1rem;
+            font-family: var(--font-mono);
+        }
+
+        .section {
+            margin-bottom: var(--spacing-3xl);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-lg);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-family: var(--font-mono);
+            border-left: 4px solid var(--color-border);
+            padding-left: var(--spacing-md);
+        }
+
+        .grid {
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        }
+
+        .card {
+            background: var(--color-cream-card);
+            padding: var(--spacing-xl);
+            border: 3px solid var(--color-border);
+            box-shadow: var(--shadow);
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+
+        .card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0px #1a1a1a;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-family: var(--font-mono);
+        }
+
+        .card-value {
+            font-size: 3.25rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            font-family: var(--font-mono);
+            color: var(--color-text-primary);
+        }
+
+        .card-subtitle {
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+            margin-top: var(--spacing-xs);
+            font-family: var(--font-mono);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .metric-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md) 0;
+            border-bottom: 1px solid #d4cfc6;
+            transition: background var(--transition);
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-row:hover {
+            background: #f0ece4;
+            padding-left: var(--spacing-sm);
+        }
+
+        .metric-name {
+            font-weight: 600;
+            flex: 1;
+            font-size: 0.925rem;
+            letter-spacing: -0.01em;
+        }
+
+        .metric-bar-container {
+            flex: 2;
+            height: 8px;
+            background: #e0dbd1;
+            overflow: hidden;
+            margin: 0 var(--spacing-md);
+            transition: background var(--transition);
+        }
+
+        .metric-bar {
+            height: 100%;
+            background: #2b2b2b;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background var(--transition);
+        }
+
+        .metric-value {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            min-width: 44px;
+            text-align: right;
+            font-family: var(--font-mono);
+            font-size: 1rem;
+        }
+
+        .insight-box {
+            background: #ede9e0;
+            border-left: 4px solid var(--color-border);
+            padding: var(--spacing-md) var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+            transition: background var(--transition);
+        }
+
+        .insight-box:hover {
+            background: #e5e0d5;
+        }
+
+        .insight-box p {
+            font-size: 0.9rem;
+            color: var(--color-text-primary);
+            line-height: 1.6;
+        }
+
+        .cohort-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .cohort-item {
+            text-align: center;
+            padding: var(--spacing-lg);
+            background: var(--color-cream-card);
+            border: 3px solid var(--color-border);
+            box-shadow: var(--shadow);
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+
+        .cohort-item:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0px #1a1a1a;
+        }
+
+        .cohort-value {
+            font-size: 2.75rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--color-text-primary);
+        }
+
+        .cohort-label {
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+            margin-top: var(--spacing-xs);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .correlation-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .correlation-table th,
+        .correlation-table td {
+            padding: var(--spacing-sm) var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid #d4cfc6;
+        }
+
+        .correlation-table th {
+            font-weight: 700;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            letter-spacing: 0.12em;
+            font-family: var(--font-mono);
+        }
+
+        .correlation-table tr {
+            transition: background var(--transition);
+        }
+
+        .correlation-table tr:hover {
+            background: #ede9e0;
+        }
+
+        .correlation-value {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            font-family: var(--font-mono);
+        }
+
+        .correlation-strong {
+            color: #f7f4ed;
+            background: #1a1a1a;
+            padding: 3px 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .correlation-moderate {
+            color: #1a1a1a;
+            background: #d4cfc6;
+            padding: 3px 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .correlation-weak {
+            color: #5a5a5a;
+            background: #ede9e0;
+            padding: 3px 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* Glossary Section */
+        .glossary-section {
+            background: var(--color-cream-card);
+            color: var(--color-text-primary);
+            padding: var(--spacing-2xl);
+            margin-bottom: var(--spacing-3xl);
+            border: 3px solid var(--color-border);
+            box-shadow: var(--shadow);
+        }
+
+        .glossary-section h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-lg);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-family: var(--font-mono);
+        }
+
+        .glossary-intro {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: var(--spacing-xl);
+            max-width: 800px;
+        }
+
+        .glossary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .glossary-item {
+            border: 2px solid #d4cfc6;
+            padding: var(--spacing-md);
+            transition: background var(--transition), border-color var(--transition);
+        }
+
+        .glossary-item:hover {
+            background: #ede9e0;
+            border-color: var(--color-border);
+        }
+
+        .glossary-term {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: var(--spacing-sm);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-text-primary);
+        }
+
+        .glossary-definition {
+            font-size: 0.925rem;
+            line-height: 1.7;
+            color: var(--color-text-primary);
+        }
+
+        .glossary-example {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+            margin-top: var(--spacing-sm);
+            font-style: italic;
+            border-left: 2px solid #d4cfc6;
+            padding-left: var(--spacing-sm);
+        }
+
+        .what-is-box {
+            background: #ede9e0;
+            border-left: 5px solid var(--color-border);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .what-is-box h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            color: var(--color-text-primary);
+        }
+
+        .what-is-box p {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--color-text-primary);
+        }
+
+        .score-guide {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-lg);
+        }
+
+        @media (max-width: 600px) {
+            .score-guide {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .score-item {
+            text-align: center;
+            padding: var(--spacing-md);
+            border: 2px solid #d4cfc6;
+        }
+
+        .score-range {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 1.35rem;
+            margin-bottom: var(--spacing-xs);
+            color: var(--color-text-primary);
+        }
+
+        .score-label {
+            font-size: 0.78rem;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .why-it-matters {
+            background: var(--color-accent-light);
+            border-left: 5px solid var(--color-border);
+            padding: var(--spacing-lg);
+            margin-top: var(--spacing-xl);
+        }
+
+        .why-it-matters h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+        }
+
+        .why-it-matters p {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--color-text-primary);
+        }
+
+        /* Methodology - Animated Flowchart */
+        .flowchart-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto var(--spacing-3xl);
+            padding: var(--spacing-xl) 0;
+            overflow: visible;
+        }
+
+        .flowchart-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .flowchart-svg path {
+            stroke: var(--color-border);
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+        }
+
+        .flowchart-svg .arrowhead {
+            fill: var(--color-border);
+        }
+
+        .flow-node {
+            position: relative;
+            z-index: 2;
+            background: var(--color-cream-card);
+            border: 3px solid var(--color-border);
+            box-shadow: var(--shadow);
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            line-height: 1.4;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: transform var(--transition), box-shadow var(--transition);
+            cursor: default;
+            margin: 0 auto;
+        }
+
+        .flow-node:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: 7px 7px 0px #1a1a1a;
+        }
+
+        .flow-node.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .flow-node .node-label {
+            font-size: 0.68rem;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+            color: var(--color-text-secondary);
+            margin-top: 4px;
+            font-family: var(--font-sans);
+        }
+
+        .flow-node .node-icon {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+            font-weight: 400;
+        }
+
+        .node-input { max-width: 200px; }
+        .node-augment { max-width: 220px; }
+        .node-backbone { max-width: 280px; background: #ede9e0; }
+        .node-head {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: var(--spacing-sm) var(--spacing-md);
+            min-width: 100px;
+            font-size: 0.68rem;
+            margin: 0 4px;
+        }
+        .node-head .score-val {
+            font-size: 0.9rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+        .node-uncertainty { max-width: 260px; }
+        .node-explain { max-width: 250px; }
+        .node-output { max-width: 300px; background: #1a1a1a; color: #f7f4ed; border-color: #1a1a1a; }
+
+        .flow-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: 0;
+            position: relative;
+            min-height: 90px;
+        }
+
+        .flow-row-heads {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            min-height: 100px;
+            padding: var(--spacing-md) 0;
+        }
+
+        .flow-arrow-down {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 40px;
+            color: var(--color-text-secondary);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            opacity: 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .flow-arrow-down.visible {
+            opacity: 1;
+        }
+
+        .flow-connector {
+            width: 2px;
+            height: 30px;
+            background: var(--color-border);
+            margin: 0 auto;
+            opacity: 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .flow-connector.visible {
+            opacity: 1;
+        }
+
+        .flow-label {
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin: var(--spacing-sm) 0;
+            opacity: 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .flow-label.visible {
+            opacity: 1;
+        }
+
+        /* Legend for the flowchart */
+        .flow-legend {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-xl);
+            flex-wrap: wrap;
+            margin-top: var(--spacing-xl);
+            padding: var(--spacing-md);
+            border: 2px solid #d4cfc6;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .flow-legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .flow-legend-swatch {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--color-border);
+        }
+
+        .flow-legend-swatch.dark { background: #1a1a1a; }
+        .flow-legend-swatch.light { background: #ede9e0; }
+        .flow-legend-swatch.cream { background: var(--color-cream-card); }
+
+        .methodology-controls {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .methodology-controls button {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border: 3px solid var(--color-border);
+            background: var(--color-cream-card);
+            color: var(--color-text-primary);
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+
+        .methodology-controls button:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0px #1a1a1a;
+        }
+
+        .methodology-controls button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #1a1a1a;
+        }
+
+        @media (max-width: 768px) {
+            .flow-node {
+                font-size: 0.65rem;
+                padding: var(--spacing-sm) var(--spacing-md);
+            }
+            .node-head {
+                min-width: 70px;
+                font-size: 0.6rem;
+                padding: var(--spacing-xs) var(--spacing-sm);
+            }
+            .flow-row {
+                gap: var(--spacing-sm);
+                min-height: 70px;
+            }
+            .flow-row-heads {
+                gap: var(--spacing-xs);
+            }
+        }
+
+        /* Literature Survey Section */
+        .lit-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .lit-stat-card {
+            text-align: center;
+            padding: var(--spacing-lg);
+            background: var(--color-cream-card);
+            border: 3px solid var(--color-border);
+            box-shadow: var(--shadow);
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+
+        .lit-stat-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0px #1a1a1a;
+        }
+
+        .lit-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--color-text-primary);
+        }
+
+        .lit-stat-label {
+            font-size: 0.72rem;
+            color: var(--color-text-secondary);
+            margin-top: var(--spacing-xs);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* Dropdown Menu */
+        .lit-dropdown {
+            border: 3px solid var(--color-border);
+            box-shadow: var(--shadow);
+            background: var(--color-cream-card);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .lit-dropdown summary {
+            cursor: pointer;
+            padding: var(--spacing-lg) var(--spacing-xl);
+            font-weight: 700;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background var(--transition);
+            user-select: none;
+        }
+
+        .lit-dropdown summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .lit-dropdown summary:hover {
+            background: #ede9e0;
+        }
+
+        .lit-dropdown summary::after {
+            content: '▼';
+            font-size: 0.7rem;
+            transition: transform var(--transition);
+            color: var(--color-text-secondary);
+        }
+
+        .lit-dropdown[open] summary::after {
+            transform: rotate(180deg);
+        }
+
+        .lit-dropdown-content {
+            padding: 0 var(--spacing-xl) var(--spacing-xl);
+        }
+
+        .lit-table-wrap {
+            overflow-x: auto;
+        }
+
+        .lit-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .lit-table th {
+            text-align: left;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--color-text-secondary);
+            border-bottom: 3px solid var(--color-border);
+            background: #ede9e0;
+        }
+
+        .lit-table td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid #d4cfc6;
+            vertical-align: top;
+            line-height: 1.5;
+        }
+
+        .lit-table tr:hover {
+            background: #f0ece4;
+        }
+
+        .lit-table .pros-cell {
+            color: #3a6a3a;
+            font-size: 0.78rem;
+        }
+
+        .lit-table .pros-cell span {
+            display: block;
+            padding: 2px 0;
+        }
+
+        .lit-table .pros-cell span::before {
+            content: '+ ';
+            font-weight: 700;
+        }
+
+        .lit-table .lims-cell {
+            color: #8a3a3a;
+            font-size: 0.78rem;
+        }
+
+        .lit-table .lims-cell span {
+            display: block;
+            padding: 2px 0;
+        }
+
+        .lit-table .lims-cell span::before {
+            content: '- ';
+            font-weight: 700;
+        }
+
+        .lit-table .authors-cell {
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .lit-table .date-cell {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .lit-table th, .lit-table td {
+                padding: var(--spacing-sm);
+                font-size: 0.72rem;
+            }
+            .lit-dropdown-content {
+                padding: 0 var(--spacing-md) var(--spacing-md);
+            }
+        }
+
+        footer {
+            margin-top: var(--spacing-3xl);
+            padding-top: var(--spacing-xl);
+            border-top: 3px solid var(--color-border);
+            text-align: center;
+            color: var(--color-text-secondary);
+            font-size: 0.78rem;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: color var(--transition);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--spacing-md);
+            }
+
+            header h1 {
+                font-size: 1.75rem;
+            }
+
+            header p {
+                font-size: 0.9rem;
+            }
+
+            .card-value {
+                font-size: 2.2rem;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+
+            .glossary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-title {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Section scroll-reveal animations */
+        .section-reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-reveal .reveal-stagger {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section-reveal.revealed .reveal-stagger {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-reveal .chart-reveal {
+            opacity: 0;
+            transform: scale(0.98);
+            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section-reveal.revealed .chart-reveal {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition-duration: 0s !important;
+                animation-duration: 0s !important;
+            }
+
+            .section-reveal,
+            .section-reveal .reveal-stagger,
+            .section-reveal .chart-reveal {
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Dataset Insights</h1>
+            <p>AI Framework for Suture Quality Control — Training Data Analysis</p>
+        </header>
+
+        <!-- GLOSSARY SECTION -->
+        <div class="glossary-section">
+            <h2>Glossary — What Everything Means</h2>
+            <p class="glossary-intro">
+                Before diving into the numbers, here's a plain-language guide to all the technical terms. No medical or engineering background needed.
+            </p>
+
+            <div class="what-is-box">
+                <h3>What is Suturing?</h3>
+                <p>
+                    <strong>Suturing</strong> (also called <strong>stitching</strong>) is the medical technique of closing a wound or cut in the skin using thread and a needle. Think of it like sewing, but on a patient's skin. Doctors and medical students practice this skill on artificial skin pads (pink rubber-like pads with grid lines) before doing it on real patients. This dataset contains photos of those practice sessions.
+                </p>
+            </div>
+
+            <h3 style="font-family: var(--font-mono); margin-bottom: var(--spacing-md); font-size: 0.9rem; letter-spacing: 0.1em;">THE 6 QUALITY METRICS (Rated 1-10)</h3>
+            <div class="glossary-grid">
+                <div class="glossary-item">
+                    <div class="glossary-term">Overall</div>
+                    <div class="glossary-definition">
+                        "How good does this entire suture line look overall?" — A global grade combining everything into one score.
+                    </div>
+                    <div class="glossary-example">Like grading an entire painting — not perfect, but pretty good.</div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">ISD (Inter-Suture Distance)</div>
+                    <div class="glossary-definition">
+                        "Are the stitches evenly spaced apart?" — Measures consistency of gaps between each stitch.
+                    </div>
+                    <div class="glossary-example">Like soldiers standing in a line — some are perfectly spaced, others are too close or too far apart.</div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Slack</div>
+                    <div class="glossary-definition">
+                        "Is the thread tight enough, or is it loose and floppy?" — Measures thread tension control.
+                    </div>
+                    <div class="glossary-example">Like a guitar string — too loose sounds bad, too tight breaks. Just right is perfect.</div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Position</div>
+                    <div class="glossary-definition">
+                        "Did the needle go in and come out at the right spot?" — Measures placement accuracy.
+                    </div>
+                    <div class="glossary-example">Like parking a car — you want it centered in the spot, not crooked or too far to one side.</div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Angulation</div>
+                    <div class="glossary-definition">
+                        "Is the needle going in at the right angle?" — Measures the angle of needle entry and exit.
+                    </div>
+                    <div class="glossary-example">Like throwing a ball — the angle matters. Too steep or too flat won't work well.</div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Width</div>
+                    <div class="glossary-definition">
+                        "Are all the stitches the same width/size?" — Measures consistency of stitch dimensions.
+                    </div>
+                    <div class="glossary-example">Like handwriting — consistent letters look professional, messy sizes look sloppy.</div>
+                </div>
+            </div>
+
+            <h3 style="font-family: var(--font-mono); margin: var(--spacing-xl) 0 var(--spacing-md); font-size: 0.9rem; letter-spacing: 0.1em;">OTHER TERMS YOU'LL SEE</h3>
+            <div class="glossary-grid">
+                <div class="glossary-item">
+                    <div class="glossary-term">Cohort</div>
+                    <div class="glossary-definition">
+                        A group of images grouped together for a specific purpose — like "Class A" vs "Class B".
+                    </div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Training Set</div>
+                    <div class="glossary-definition">
+                        The practice exam — images used to teach the AI what good vs bad sutures look like.
+                    </div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Validation Set</div>
+                    <div class="glossary-definition">
+                        The quiz — images used to check if the AI learned correctly.
+                    </div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Annotation</div>
+                    <div class="glossary-definition">
+                        The expert's grade/score for each image — like a teacher marking an exam.
+                    </div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Correlation</div>
+                    <div class="glossary-definition">
+                        How closely two things are related. High correlation = they usually go together. Low = they're independent.
+                    </div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Outlier</div>
+                    <div class="glossary-definition">
+                        An unusual score that's very different from most others — like a student who scores 2/10 when everyone else gets 6-8.
+                    </div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Standard Deviation (SD)</div>
+                    <div class="glossary-definition">
+                        How spread out the scores are. Small SD = everyone scored similarly. Large SD = big range of scores.
+                    </div>
+                </div>
+                <div class="glossary-item">
+                    <div class="glossary-term">Skewness</div>
+                    <div class="glossary-definition">
+                        Whether scores lean toward high or low. "Left-skewed" means most scores are on the higher end.
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="font-family: var(--font-mono); margin: var(--spacing-xl) 0 var(--spacing-md); font-size: 0.9rem; letter-spacing: 0.1em;">WHAT THE SCORES MEAN</h3>
+            <div class="score-guide">
+                <div class="score-item">
+                    <div class="score-range">1-3</div>
+                    <div class="score-label">Needs work</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-range">4-6</div>
+                    <div class="score-label">Getting there</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-range">7-9</div>
+                    <div class="score-label">Good quality</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-range">10</div>
+                    <div class="score-label">Excellent</div>
+                </div>
+            </div>
+
+            <div class="why-it-matters">
+                <h3>Why This Research Matters</h3>
+                <p>
+                    This research helps create an <strong>AI assistant</strong> that can automatically evaluate suture quality, giving medical students instant feedback on their practice. Instead of waiting for a teacher to check their work, students can get immediate, consistent grading — like having a personal coach available 24/7. The AI learns from thousands of examples scored by experts, then can grade new sutures on its own.
+                </p>
+            </div>
+        </div>
+
+        <!-- Overview Stats -->
+        <section class="section section-reveal">
+            <h2 class="section-title">Dataset Overview</h2>
+            <div class="grid grid-4">
+                <div class="card reveal-stagger">
+                    <div class="card-header">
+                        <span class="card-title">Total Images</span>
+                    </div>
+                    <div class="card-value">1,648</div>
+                    <div class="card-subtitle">Across 3 cohorts</div>
+                </div>
+                <div class="card reveal-stagger">
+                    <div class="card-header">
+                        <span class="card-title">Annotated</span>
+                    </div>
+                    <div class="card-value">1,216</div>
+                    <div class="card-subtitle">73.8% of total</div>
+                </div>
+                <div class="card reveal-stagger">
+                    <div class="card-header">
+                        <span class="card-title">Quality Metrics</span>
+                    </div>
+                    <div class="card-value">6</div>
+                    <div class="card-subtitle">Per image rating</div>
+                </div>
+                <div class="card reveal-stagger">
+                    <div class="card-header">
+                        <span class="card-title">Score Range</span>
+                    </div>
+                    <div class="card-value">1-10</div>
+                    <div class="card-subtitle">Expert ratings</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cohort Distribution -->
+        <section class="section section-reveal">
+            <h2 class="section-title">Cohort Distribution</h2>
+            <div class="cohort-grid">
+                <div class="cohort-item">
+                    <div class="cohort-value">1,010</div>
+                    <div class="cohort-label">Training Set</div>
+                </div>
+                <div class="cohort-item">
+                    <div class="cohort-value">206</div>
+                    <div class="cohort-label">Validation Set</div>
+                </div>
+                <div class="cohort-item">
+                    <div class="cohort-value">160</div>
+                    <div class="cohort-label">Application (2-week)</div>
+                </div>
+                <div class="cohort-item">
+                    <div class="cohort-value">160</div>
+                    <div class="cohort-label">Application (4-week)</div>
+                </div>
+                <div class="cohort-item">
+                    <div class="cohort-value">112</div>
+                    <div class="cohort-label">Application (Resident)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quality Metrics -->
+        <section class="section section-reveal">
+            <h2 class="section-title">Quality Metrics Performance</h2>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Mean Scores (Training Set)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-name">Width</span>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar" style="width: 70.9%;"></div>
+                        </div>
+                        <span class="metric-value">7.09</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-name">Angulation</span>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar" style="width: 63.4%;"></div>
+                        </div>
+                        <span class="metric-value">6.34</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-name">Slack</span>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar" style="width: 62.9%;"></div>
+                        </div>
+                        <span class="metric-value">6.29</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-name">ISD</span>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar" style="width: 60.5%;"></div>
+                        </div>
+                        <span class="metric-value">6.05</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-name">Position</span>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar" style="width: 57.8%;"></div>
+                        </div>
+                        <span class="metric-value">5.78</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-name">Overall</span>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar" style="width: 54.4%;"></div>
+                        </div>
+                        <span class="metric-value">5.44</span>
+                    </div>
+                    <div class="insight-box">
+                        <p><strong>Key Finding:</strong> Width uniformity is the strongest performing metric (7.09), while Overall quality indicates room for improvement.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Score Distribution (Overall)</span>
+                    </div>
+                    <div class="chart-container chart-reveal">
+                        <canvas id="overallDistChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Correlation Analysis -->
+        <section class="section section-reveal">
+            <h2 class="section-title">Metric Correlations</h2>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Correlation with Overall Quality</span>
+                    </div>
+                    <div class="chart-container chart-reveal">
+                        <canvas id="correlationChart"></canvas>
+                    </div>
+                    <div class="insight-box">
+                        <p><strong>Insight:</strong> Slack (r=0.722) is the strongest predictor of overall suture quality, followed by Width (r=0.617) and Position (r=0.546).</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Top Correlated Pairs</span>
+                    </div>
+                    <table class="correlation-table">
+                        <thead>
+                            <tr>
+                                <th>Metric Pair</th>
+                                <th>Correlation</th>
+                                <th>Strength</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Overall + Slack</td>
+                                <td class="correlation-value correlation-strong">0.722</td>
+                                <td>Strong</td>
+                            </tr>
+                            <tr>
+                                <td>Overall + Width</td>
+                                <td class="correlation-value correlation-strong">0.617</td>
+                                <td>Strong</td>
+                            </tr>
+                            <tr>
+                                <td>Overall + Position</td>
+                                <td class="correlation-value correlation-moderate">0.546</td>
+                                <td>Moderate</td>
+                            </tr>
+                            <tr>
+                                <td>Slack + Position</td>
+                                <td class="correlation-value correlation-moderate">0.523</td>
+                                <td>Moderate</td>
+                            </tr>
+                            <tr>
+                                <td>Angulation + Width</td>
+                                <td class="correlation-value correlation-moderate">0.500</td>
+                                <td>Moderate</td>
+                            </tr>
+                            <tr>
+                                <td>ISD + Slack</td>
+                                <td class="correlation-value correlation-weak">0.026</td>
+                                <td>Weak</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Variability Analysis -->
+        <section class="section section-reveal">
+            <h2 class="section-title">Variability & Distribution</h2>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Coefficient of Variation</span>
+                    </div>
+                    <div class="chart-container chart-reveal">
+                        <canvas id="cvChart"></canvas>
+                    </div>
+                    <div class="insight-box">
+                        <p><strong>Observation:</strong> Width has the lowest variability (CV=0.151), indicating consistent performance. Overall shows highest variability.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Outlier Analysis (>2 SD)</span>
+                    </div>
+                    <div class="chart-container chart-reveal">
+                        <canvas id="outlierChart"></canvas>
+                    </div>
+                    <div class="insight-box">
+                        <p><strong>Note:</strong> Slack shows the most outliers (7.1%), indicating this metric has the widest performance spread.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Training Set Distribution -->
+        <section class="section section-reveal">
+            <h2 class="section-title">Subject Distribution</h2>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Images per Doctor (Training)</span>
+                    </div>
+                    <div class="chart-container chart-reveal">
+                        <canvas id="doctorChart"></canvas>
+                    </div>
+                    <div class="insight-box">
+                        <p><strong>Class Imbalance:</strong> Doctor 7 has only 7 images (0.7%), while Doctor 10 has 371 (36.7%). This may affect model generalization.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Score Distribution by Metric</span>
+                    </div>
+                    <div class="chart-container chart-reveal">
+                        <canvas id="allMetricsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Insights -->
+        <section class="section section-reveal">
+            <h2 class="section-title">Critical Insights for AI Framework</h2>
+            <div class="grid grid-3">
+                <div class="card">
+                    <div class="card-title">Model Design</div>
+                    <p style="margin-top: var(--spacing-sm); font-size: 0.875rem; line-height: 1.6;">
+                        Multi-task learning across all 6 metrics. Prioritize Slack as primary feature due to highest correlation with Overall (r=0.722).
+                    </p>
+                </div>
+                <div class="card">
+                    <div class="card-title">Feature Engineering</div>
+                    <p style="margin-top: var(--spacing-sm); font-size: 0.875rem; line-height: 1.6;">
+                        Consider composite score: Slack + Width + Position as "Core Quality Index". ISD appears independent — handle separately.
+                    </p>
+                </div>
+                <div class="card">
+                    <div class="card-title">Data Challenges</div>
+                    <p style="margin-top: var(--spacing-sm); font-size: 0.875rem; line-height: 1.6;">
+                        Address class imbalance for Doctor 7. Consider data augmentation or weighted sampling. Validate cross-cohort generalization.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- METHODOLOGY: ANIMATED FLOWCHART -->
+        <section class="section">
+            <h2 class="section-title">Methodology — Suture-Q AI Framework</h2>
+            <p style="font-size: 0.95rem; margin-bottom: var(--spacing-lg); max-width: 800px; color: var(--color-text-secondary);">
+                Interactive pipeline &mdash; designed from literature limitations. Hover any node or click <strong>Replay</strong> below.
+            </p>
+
+            <div class="methodology-controls">
+                <button onclick="replayFlowchart()">Replay Animation</button>
+                <button onclick="toggleFlowSpeed()">Toggle Speed</button>
+            </div>
+
+            <div class="flowchart-wrap" id="flowchart">
+                <!-- SVG for connection paths - rendered here -->
+                <svg class="flowchart-svg" id="flowSvg" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMax meet"></svg>
+
+                <!-- Row 1: Input -->
+                <div class="flow-row">
+                    <div class="flow-node node-input" id="fn-input">
+                        <span class="node-icon">&#9633;</span>
+                        INPUT IMAGE
+                        <span class="node-label">PNG &bull; 512&times;512 &bull; Top-down</span>
+                    </div>
+                </div>
+
+                <div class="flow-connector" id="conn-1"></div>
+                <div class="flow-arrow-down" id="arrow-1">&#9661;</div>
+
+                <!-- Row 2: Augmentation -->
+                <div class="flow-row">
+                    <div class="flow-node node-augment" id="fn-augment">
+                        <span class="node-icon">&#8664;&#8663;</span>
+                        DATA AUGMENTATION
+                        <span class="node-label">Rotation &plusmn;15&deg; &bull; Flip &bull; Brightness &bull; Crop</span>
+                    </div>
+                </div>
+
+                <div class="flow-connector" id="conn-2"></div>
+                <div class="flow-arrow-down" id="arrow-2">&#9661;</div>
+
+                <!-- Row 3: Backbone -->
+                <div class="flow-row">
+                    <div class="flow-node node-backbone" id="fn-backbone">
+                        <span class="node-icon">&#9638;</span>
+                        EFFICIENTNET-B3 / SWIN-TINY
+                        <span class="node-label">ImageNet pretrained &bull; Shared feature extractor</span>
+                    </div>
+                </div>
+
+                <div class="flow-connector" id="conn-3"></div>
+                <div class="flow-arrow-down" id="arrow-3">&#9661;</div>
+
+                <!-- Row 4: 6 Regression Heads -->
+                <div class="flow-label" id="label-heads">Multi-Task Regression Heads</div>
+                <div class="flow-row-heads" id="row-heads">
+                    <div class="flow-node node-head" id="fn-overall">
+                        <span class="score-val">5.44</span>
+                        OVERALL
+                        <span class="node-label">Global quality</span>
+                    </div>
+                    <div class="flow-node node-head" id="fn-isd">
+                        <span class="score-val">6.05</span>
+                        ISD
+                        <span class="node-label">Spacing consistency</span>
+                    </div>
+                    <div class="flow-node node-head" id="fn-slack">
+                        <span class="score-val">6.29</span>
+                        SLACK
+                        <span class="node-label">Thread tension</span>
+                    </div>
+                    <div class="flow-node node-head" id="fn-pos">
+                        <span class="score-val">5.78</span>
+                        POSITION
+                        <span class="node-label">Placement accuracy</span>
+                    </div>
+                    <div class="flow-node node-head" id="fn-ang">
+                        <span class="score-val">6.34</span>
+                        ANGULATION
+                        <span class="node-label">Needle angle</span>
+                    </div>
+                    <div class="flow-node node-head" id="fn-width">
+                        <span class="score-val">7.09</span>
+                        WIDTH
+                        <span class="node-label">Stitch size</span>
+                    </div>
+                </div>
+
+                <div class="flow-connector" id="conn-4"></div>
+                <div class="flow-arrow-down" id="arrow-4">&#9661;</div>
+
+                <!-- Row 5: Uncertainty -->
+                <div class="flow-row">
+                    <div class="flow-node node-uncertainty" id="fn-uncertainty">
+                        <span class="node-icon">&#177;</span>
+                        UNCERTAINTY QUANTIFICATION
+                        <span class="node-label">MC Dropout &times; 10 &rarr; Mean + 95% CI per metric</span>
+                    </div>
+                </div>
+
+                <div class="flow-connector" id="conn-5"></div>
+                <div class="flow-arrow-down" id="arrow-5">&#9661;</div>
+
+                <!-- Row 6: Explainability -->
+                <div class="flow-row">
+                    <div class="flow-node node-explain" id="fn-explain">
+                        <span class="node-icon">&#9639;</span>
+                        EXPLAINABILITY
+                        <span class="node-label">Grad-CAM &rarr; 6 heatmaps showing what drove each score</span>
+                    </div>
+                </div>
+
+                <div class="flow-connector" id="conn-6"></div>
+                <div class="flow-arrow-down" id="arrow-6">&#9661;</div>
+
+                <!-- Row 7: Output -->
+                <div class="flow-row">
+                    <div class="flow-node node-output" id="fn-output">
+                        <span class="node-icon">&#10003;</span>
+                        6 QUALITY SCORES + CONFIDENCE INTERVALS + HEATMAPS
+                        <span class="node-label" style="color: #ccc;">Accreditation-grade feedback for every suture</span>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="flow-legend">
+                    <div class="flow-legend-item">
+                        <div class="flow-legend-swatch dark"></div>
+                        <span>Output node</span>
+                    </div>
+                    <div class="flow-legend-item">
+                        <div class="flow-legend-swatch light"></div>
+                        <span>Core processing</span>
+                    </div>
+                    <div class="flow-legend-item">
+                        <div class="flow-legend-swatch cream"></div>
+                        <span>Data / Heads</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LITERATURE SURVEY -->
+        <section class="section">
+            <h2 class="section-title">Literature Survey — Research Landscape</h2>
+            <p style="font-size: 0.95rem; margin-bottom: var(--spacing-lg); max-width: 800px; color: var(--color-text-secondary);">
+                Analysis of 7 key publications (2017-2026) on AI-based surgical skill and suture quality assessment. Full details in <strong>Research_paper.md</strong>.
+            </p>
+
+            <div class="lit-summary-grid">
+                <div class="lit-stat-card">
+                    <div class="lit-stat-value">7</div>
+                    <div class="lit-stat-label">Papers Analyzed</div>
+                </div>
+                <div class="lit-stat-card">
+                    <div class="lit-stat-value">2017-2026</div>
+                    <div class="lit-stat-label">Publication Range</div>
+                </div>
+                <div class="lit-stat-card">
+                    <div class="lit-stat-value">247</div>
+                    <div class="lit-stat-label">Largest Review Scope</div>
+                </div>
+                <div class="lit-stat-card">
+                    <div class="lit-stat-value">92%</div>
+                    <div class="lit-stat-label">Best Lab Accuracy</div>
+                </div>
+            </div>
+
+            <!-- Dropdown Menu with Table -->
+            <details class="lit-dropdown">
+                <summary>View Full Literature Survey Table (7 Papers)</summary>
+                <div class="lit-dropdown-content">
+                    <div class="lit-table-wrap">
+                        <table class="lit-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:22%;">Authors</th>
+                                    <th style="width:18%;">Dataset</th>
+                                    <th style="width:10%;">Date</th>
+                                    <th style="width:25%;">Pros</th>
+                                    <th style="width:25%;">Limitations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="authors-cell">Khalil S, Shah HA, Bednarik R</td>
+                                    <td>11 surgeons (6 novice, 5 expert); 132 microsurgical sutures; 7 phases</td>
+                                    <td class="date-cell">2025</td>
+                                    <td class="pros-cell">
+                                        <span>Novel skipping window strategy for class imbalance</span>
+                                        <span>Dual metric (confidence + duration) for skill assessment</span>
+                                        <span>Good cross-dataset generalization</span>
+                                    </td>
+                                    <td class="lims-cell">
+                                        <span>Small dataset (132 sutures only)</span>
+                                        <span>Microsurgery domain — may not generalize to open/laparoscopic</span>
+                                        <span>Challenges with visually similar phases</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="authors-cell">Spagnulo R, Marzola F, Corso F et al.</td>
+                                    <td>15 participants (Masters, Advanced, Beginners); 45 procedures across 3 platforms (laparoscopy, dVRK, Flex)</td>
+                                    <td class="date-cell">2026</td>
+                                    <td class="pros-cell">
+                                        <span>Direct evidence linking visual suture spacing to mechanical strength</span>
+                                        <span>Multi-platform comparison (laparoscopy vs dVRK vs Flex)</span>
+                                        <span>Clinically relevant outcome metric (burst pressure)</span>
+                                    </td>
+                                    <td class="lims-cell">
+                                        <span>Very small sample (N=45 procedures)</span>
+                                        <span>XGBoost model failed (R² = -0.42, MSE = 93.7)</span>
+                                        <span>Pilot study — limited generalizability</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="authors-cell">Pan M, Wang S, Li J et al.</td>
+                                    <td>JIGSAWS public benchmark dataset (robot-assisted surgery videos)</td>
+                                    <td class="date-cell">2023</td>
+                                    <td class="pros-cell">
+                                        <span>Purely vision-based — no external sensors needed</span>
+                                        <span>Near real-time processing (3-5 seconds)</span>
+                                        <span>High accuracy: 92.04% (2-level), 84.80% (3-level)</span>
+                                    </td>
+                                    <td class="lims-cell">
+                                        <span>Tested only on JIGSAWS — limited to robotic surgery</span>
+                                        <span>No real operating room validation</span>
+                                        <span>2D vision limitations vs 3D approaches</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="authors-cell">Kankanamge D, Wijeweera C, Ong Z et al.</td>
+                                    <td>24 citations from systematic search (Medline, Embase, Scopus, CENTRAL, Web of Science)</td>
+                                    <td class="date-cell">2025</td>
+                                    <td class="pros-cell">
+                                        <span>Comprehensive review of AI + standardised objective metrics (SOM)</span>
+                                        <span>Identifies key methodological issues in the field</span>
+                                        <span>Good coverage of OSATS and GEARS as assessment frameworks</span>
+                                    </td>
+                                    <td class="lims-cell">
+                                        <span>High heterogeneity prevents meta-analysis</span>
+                                        <span>Narrative review (not systematic review methodology)</span>
+                                        <span>No standardized comparison framework across studies</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="authors-cell">Boal MWE, Anastasiou D, Tesfai F et al.</td>
+                                    <td>247 studies from systematic search (Ovid Embase/Medline, PubMed, Web of Science)</td>
+                                    <td class="date-cell">2024</td>
+                                    <td class="pros-cell">
+                                        <span>Largest systematic review in this domain (247 studies)</span>
+                                        <span>Rigorous validity framework (Messick + OCEBM LoR)</span>
+                                        <span>Covers all tool types: manual, APMs, AI methods</span>
+                                    </td>
+                                    <td class="lims-cell">
+                                        <span>Most tools not validated for accreditation use</span>
+                                        <span>Lab-to-OR accuracy gap (lab >90%, OR 67-100%)</span>
+                                        <span>AI studies lack standardized quality assessment tools</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="authors-cell">Vedula SS, Ishii M, Hager GD</td>
+                                    <td>45 publications reviewed (foundational review)</td>
+                                    <td class="date-cell">2017</td>
+                                    <td class="pros-cell">
+                                        <span>Established the OCASE-T paradigm for the field</span>
+                                        <span>Comprehensive problem space definition</span>
+                                        <span>Key reference — foundational framework cited widely</span>
+                                    </td>
+                                    <td class="lims-cell">
+                                        <span>Outdated (2017) — predates modern deep learning advances</span>
+                                        <span>Most reviewed studies are simulation-based, not OR</span>
+                                        <span>No uniform validation methodology identified</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="authors-cell">IJgosse WM, Leijte E, Ganni S et al.</td>
+                                    <td>36 videos; Delphi consensus with 12+ experts; 3 experience groups (novice, intermediate, expert)</td>
+                                    <td class="date-cell">2020</td>
+                                    <td class="pros-cell">
+                                        <span>Excellent inter-rater reliability (Cohen's Kappa 0.75-0.87)</span>
+                                        <span>Only suturing-specific competency assessment tool found</span>
+                                        <span>Developed through rigorous Delphi expert consensus</span>
+                                    </td>
+                                    <td class="lims-cell">
+                                        <span>Small sample (N=36 videos)</span>
+                                        <span>Laparoscopic only — not validated for open or robotic</span>
+                                        <span>Ordinal 4-point scale limits granularity</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: var(--spacing-lg); display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+                        <span style="font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: #3a6a3a; border: 2px solid #3a6a3a; padding: 3px 8px;">+ Green = Strength</span>
+                        <span style="font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: #8a3a3a; border: 2px solid #8a3a3a; padding: 3px 8px;">- Red = Limitation</span>
+                    </div>
+                </div>
+            </details>
+
+            <div class="insight-box" style="margin-bottom: var(--spacing-xl);">
+                <p><strong>Key gap identified:</strong> No publicly available suture-specific image dataset with expert quality ratings exists — making <strong>our dataset of 1,648 images with 6-dimensional expert annotations</strong> uniquely valuable. Most prior work uses video/kinematics; our static-image approach is novel and underexplored.</p>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">What We Adopt from Literature</span>
+                    </div>
+                    <ul style="font-size: 0.875rem; line-height: 1.8; list-style: none; padding: 0;">
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✓ Slack as primary quality predictor (highest correlation)</li>
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✓ Spacing irregularity → mechanical strength link (Spagnulo)</li>
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✓ Vision-only approach (Pan — no sensors needed)</li>
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✓ Messick validity framework for evaluation (Boal)</li>
+                        <li style="padding: var(--spacing-sm) 0;">✓ Multi-metric scoring (LS-CAT approach)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Our Differentiators</span>
+                    </div>
+                    <ul style="font-size: 0.875rem; line-height: 1.8; list-style: none; padding: 0;">
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ Largest suture-specific dataset (1,648 images)</li>
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ Static image analysis (not video-based)</li>
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ 6-dimensional expert quality annotations</li>
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ Real clinical training environment data</li>
+                        <li style="padding: var(--spacing-sm) 0;">✦ Addresses the small-dataset gap in literature</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Dataset Analysis — Framework for AI in Quality Control of Suturing</p>
+            <p style="margin-top: var(--spacing-xs);">Generated July 2026 — D:\REU\dataset</p>
+        </footer>
+    </div>
+
+    <script>
+        // Chart.js global defaults
+        Chart.defaults.font.family = "'Space Mono', monospace";
+        Chart.defaults.color = '#5a5a5a';
+        Chart.defaults.animation = { duration: 500, easing: 'easeOutQuart' };
+
+        // Warm, refined color palette
+        const palette = {
+            dark: '#1a1a1a',
+            slate: '#4a4a4a',
+            muted: '#8a8a8a',
+            terracotta: '#b85a4a',
+            ochre: '#c4943a',
+            olive: '#7a8a5a',
+            teal: '#4a8a8a',
+            mauve: '#8a6a7a',
+            cream: '#ede9e0',
+            grid: '#d8d4ca'
+        };
+
+        // 1. Overall Score Distribution
+        new Chart(document.getElementById('overallDistChart'), {
+            type: 'bar',
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                datasets: [{
+                    label: 'Frequency',
+                    data: [8, 32, 71, 155, 234, 257, 176, 54, 21, 2],
+                    backgroundColor: palette.terracotta,
+                    hoverBackgroundColor: '#c96a58',
+                    barPercentage: 0.85
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        title: { display: true, text: 'Score', font: { weight: 700, family: "'Space Mono'", size: 11 } }
+                    },
+                    y: {
+                        grid: { color: palette.grid },
+                        title: { display: true, text: 'Count', font: { weight: 700, family: "'Space Mono'", size: 11 } }
+                    }
+                },
+                hover: { mode: 'index', intersect: false }
+            }
+        });
+
+        // 2. Correlation with Overall
+        new Chart(document.getElementById('correlationChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Slack', 'Width', 'Position', 'Angulation', 'ISD'],
+                datasets: [{
+                    label: 'Correlation with Overall',
+                    data: [0.722, 0.617, 0.546, 0.472, 0.162],
+                    backgroundColor: [
+                        palette.ochre,
+                        palette.olive,
+                        palette.teal,
+                        palette.mauve,
+                        palette.muted
+                    ],
+                    hoverBackgroundColor: [
+                        '#d4a84a',
+                        '#8a9a6a',
+                        '#5a9a9a',
+                        '#9a7a8a',
+                        '#9a9a9a'
+                    ],
+                    barPercentage: 0.75
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        min: 0,
+                        max: 1,
+                        grid: { color: palette.grid },
+                        title: { display: true, text: 'Correlation (r)', font: { weight: 700, family: "'Space Mono'", size: 11 } }
+                    },
+                    y: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // 3. Coefficient of Variation
+        new Chart(document.getElementById('cvChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Width', 'ISD', 'Angulation', 'Position', 'Slack', 'Overall'],
+                datasets: [{
+                    label: 'CV',
+                    data: [0.151, 0.190, 0.206, 0.256, 0.261, 0.289],
+                    backgroundColor: [
+                        palette.olive,
+                        palette.olive,
+                        palette.teal,
+                        palette.mauve,
+                        palette.terracotta,
+                        palette.dark
+                    ],
+                    hoverBackgroundColor: [
+                        '#8a9a6a',
+                        '#8a9a6a',
+                        '#5a9a9a',
+                        '#9a7a8a',
+                        '#c96a58',
+                        '#2a2a2a'
+                    ],
+                    barPercentage: 0.75
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        min: 0,
+                        max: 0.35,
+                        grid: { color: palette.grid },
+                        title: { display: true, text: 'Coefficient', font: { weight: 700, family: "'Space Mono'", size: 11 } }
+                    },
+                    y: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // 4. Outlier Analysis - Donut chart
+        new Chart(document.getElementById('outlierChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Slack', 'Overall', 'Position', 'Angulation', 'Width', 'ISD'],
+                datasets: [{
+                    data: [72, 63, 49, 37, 21, 16],
+                    backgroundColor: [
+                        palette.terracotta,
+                        palette.ochre,
+                        palette.teal,
+                        palette.mauve,
+                        palette.olive,
+                        palette.muted
+                    ],
+                    borderWidth: 3,
+                    borderColor: '#f7f4ed'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '45%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { 
+                            padding: 14, 
+                            usePointStyle: true, 
+                            pointStyle: 'rect',
+                            font: { family: "'Space Mono'", size: 11, weight: '600' }
+                        }
+                    }
+                },
+                hover: { mode: 'nearest' }
+            }
+        });
+
+        // 5. Doctor Distribution
+        new Chart(document.getElementById('doctorChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Doc 4', 'Doc 5', 'Doc 7', 'Doc 8', 'Doc 10'],
+                datasets: [{
+                    label: 'Images',
+                    data: [214, 197, 7, 221, 371],
+                    backgroundColor: palette.teal,
+                    hoverBackgroundColor: '#5a9a9a',
+                    barPercentage: 0.75
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        title: { display: true, text: 'Doctor ID', font: { weight: 700, family: "'Space Mono'", size: 11 } }
+                    },
+                    y: {
+                        grid: { color: palette.grid },
+                        title: { display: true, text: 'Image Count', font: { weight: 700, family: "'Space Mono'", size: 11 } }
+                    }
+                }
+            }
+        });
+
+        // 6. All Metrics Distribution - Radar chart
+        new Chart(document.getElementById('allMetricsChart'), {
+            type: 'radar',
+            data: {
+                labels: ['Overall', 'ISD', 'Slack', 'Position', 'Angulation', 'Width'],
+                datasets: [
+                    {
+                        label: 'Training Mean',
+                        data: [5.44, 6.05, 6.29, 5.78, 6.34, 7.09],
+                        borderColor: palette.terracotta,
+                        backgroundColor: 'rgba(184, 90, 74, 0.08)',
+                        pointBackgroundColor: palette.terracotta,
+                        pointBorderColor: '#f7f4ed',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Validation Mean',
+                        data: [5.36, 5.33, 5.63, 5.72, 6.64, 6.56],
+                        borderColor: palette.slate,
+                        backgroundColor: 'rgba(74, 74, 74, 0.06)',
+                        pointBackgroundColor: palette.slate,
+                        pointBorderColor: '#f7f4ed',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        borderWidth: 2,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { 
+                            padding: 18, 
+                            usePointStyle: true, 
+                            pointStyle: 'rect',
+                            font: { family: "'Space Mono'", size: 11, weight: '600' }
+                        }
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 10,
+                        ticks: { stepSize: 2, display: false },
+                        grid: { color: palette.grid },
+                        angleLines: { color: palette.grid },
+                        pointLabels: { font: { size: 11, weight: 700, family: "'Space Mono'" } }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+    // ─── Suture-Q AI Animated Flowchart ─────────────────────────
+    let flowSpeed = 1;
+    let flowTimeline = null;
+
+    function buildFlowArrows() {
+        const svg = document.getElementById('flowSvg');
+        svg.innerHTML = '';
+
+        // Define node-to-node connections as SVG paths
+        // Each: [fromId, toId, label]
+        const connections = [
+            ['fn-input',    'fn-augment',     ''],
+            ['fn-augment',  'fn-backbone',    ''],
+            ['fn-backbone', 'fn-overall',     ''],
+            ['fn-backbone', 'fn-isd',         ''],
+            ['fn-backbone', 'fn-slack',       ''],
+            ['fn-backbone', 'fn-pos',         ''],
+            ['fn-backbone', 'fn-ang',         ''],
+            ['fn-backbone', 'fn-width',       ''],
+            ['fn-overall',  'fn-uncertainty', ''],
+            ['fn-isd',      'fn-uncertainty', ''],
+            ['fn-slack',    'fn-uncertainty', ''],
+            ['fn-pos',      'fn-uncertainty', ''],
+            ['fn-ang',      'fn-uncertainty', ''],
+            ['fn-width',    'fn-uncertainty', ''],
+            ['fn-uncertainty', 'fn-explain',  ''],
+            ['fn-explain',  'fn-output',      '']
+        ];
+
+        connections.forEach(([fromId, toId]) => {
+            const fromEl = document.getElementById(fromId);
+            const toEl = document.getElementById(toId);
+            if (!fromEl || !toEl) return;
+
+            const wrap = document.getElementById('flowchart');
+            const wrapRect = wrap.getBoundingClientRect();
+
+            const fromRect = fromEl.getBoundingClientRect();
+            const toRect = toEl.getBoundingClientRect();
+
+            const x1 = fromRect.left - wrapRect.left + fromRect.width / 2;
+            const y1 = fromRect.bottom - wrapRect.top;
+            const x2 = toRect.left - wrapRect.left + toRect.width / 2;
+            const y2 = toRect.top - wrapRect.top;
+
+            const cy = (y1 + y2) / 2;
+            const cx1 = x1;
+            const cx2 = x2;
+
+            const d = `M ${x1} ${y1} C ${cx1} ${cy}, ${cx2} ${cy}, ${x2} ${y2}`;
+
+            // Draw path
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('data-from', fromId);
+            path.setAttribute('data-to', toId);
+            path.style.strokeDasharray = 'none';
+            path.style.stroke = '#1a1a1a';
+            path.style.strokeWidth = '2.5';
+            path.style.fill = 'none';
+            path.style.opacity = '0';
+            svg.appendChild(path);
+
+            // Arrowhead (small triangle at end)
+            const arrowSize = 8;
+            const angle = Math.atan2(y2 - cy, x2 - cx1);
+            const ax = x2 - Math.cos(angle) * 6;
+            const ay = y2 - Math.sin(angle) * 6;
+            const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const a1x = ax - arrowSize * Math.cos(angle - Math.PI / 6);
+            const a1y = ay - arrowSize * Math.sin(angle - Math.PI / 6);
+            const a2x = ax - arrowSize * Math.cos(angle + Math.PI / 6);
+            const a2y = ay - arrowSize * Math.sin(angle + Math.PI / 6);
+            poly.setAttribute('points', `${x2},${y2} ${a1x},${a1y} ${a2x},${a2y}`);
+            poly.setAttribute('class', 'arrowhead');
+            poly.style.opacity = '0';
+            svg.appendChild(poly);
+        });
+
+        // Update SVG viewBox to match actual content
+        const wrapRect = document.getElementById('flowchart').getBoundingClientRect();
+        svg.setAttribute('viewBox', `0 0 ${wrapRect.width} ${wrapRect.height}`);
+    }
+
+    function animateFlowchart() {
+        if (flowTimeline) {
+            flowTimeline.pause();
+        }
+
+        const speed = flowSpeed;
+        const dur = (ms) => ms / speed;
+
+        // Reset all nodes
+        document.querySelectorAll('.flow-node').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+        });
+        document.querySelectorAll('.flow-connector, .flow-arrow-down, .flow-label').forEach(el => {
+            el.style.opacity = '0';
+        });
+        document.querySelectorAll('#flowSvg path, #flowSvg polygon').forEach(el => {
+            el.style.opacity = '0';
+        });
+
+        // Build sequence: [selector, delay, duration]
+        const sequence = [
+            ['#fn-input',          0,    600],
+            ['#conn-1, #arrow-1',  600,  400],
+            ['#fn-augment',        1000, 600],
+            ['#conn-2, #arrow-2',  1600, 400],
+            ['#fn-backbone',       2000, 600],
+            ['#conn-3, #arrow-3',  2600, 400],
+            ['#label-heads',       3000, 400],
+            ['#fn-overall',        3200, 400],
+            ['#fn-isd',            3400, 400],
+            ['#fn-slack',          3600, 400],
+            ['#fn-pos',            3800, 400],
+            ['#fn-ang',            4000, 400],
+            ['#fn-width',          4200, 400],
+            ['#conn-4, #arrow-4',  4600, 400],
+            ['#fn-uncertainty',    5000, 600],
+            ['#conn-5, #arrow-5',  5600, 400],
+            ['#fn-explain',        6000, 600],
+            ['#conn-6, #arrow-6',  6600, 400],
+            ['#fn-output',         7000, 700]
+        ];
+
+        // Build SVG connections animation based on when both nodes are visible
+        const svgPathAnim = [
+            ['fn-input fn-augment',             600,  500],
+            ['fn-augment fn-backbone',          1600, 500],
+            ['fn-backbone fn-overall',          2600, 400],
+            ['fn-backbone fn-isd',              2600, 400],
+            ['fn-backbone fn-slack',            2600, 400],
+            ['fn-backbone fn-pos',              2600, 400],
+            ['fn-backbone fn-ang',              2600, 400],
+            ['fn-backbone fn-width',            2600, 400],
+            ['fn-overall fn-uncertainty',       4600, 400],
+            ['fn-isd fn-uncertainty',           4600, 400],
+            ['fn-slack fn-uncertainty',         4600, 400],
+            ['fn-pos fn-uncertainty',           4600, 400],
+            ['fn-ang fn-uncertainty',           4600, 400],
+            ['fn-width fn-uncertainty',         4600, 400],
+            ['fn-uncertainty fn-explain',       5600, 400],
+            ['fn-explain fn-output',            6600, 400]
+        ];
+
+        // Run node animations with anime.js staggered timeline
+        const tl = anime.timeline({
+            easing: 'easeOutCubic',
+            autoplay: true
+        });
+
+        sequence.forEach(([sel, delay, duration]) => {
+            tl.add({
+                targets: sel,
+                opacity: [0, 1],
+                translateY: [20, 0],
+                duration: dur(duration),
+                delay: 0
+            }, dur(delay));
+        });
+
+        // SVG path connections
+        svgPathAnim.forEach(([pair, delay, duration]) => {
+            const [fromId, toId] = pair.split(' ');
+            tl.add({
+                targets: [`#flowSvg path[data-from="${fromId}"][data-to="${toId}"]`,
+                         `#flowSvg polygon[data-from="${fromId}"][data-to="${toId}"]`],
+                opacity: [0, 1],
+                duration: dur(duration),
+                delay: 0
+            }, dur(delay));
+        });
+
+        flowTimeline = tl;
+    }
+
+    function replayFlowchart() {
+        buildFlowArrows();
+        setTimeout(() => animateFlowchart(), 100);
+    }
+
+    function toggleFlowSpeed() {
+        flowSpeed = flowSpeed === 1 ? 2.5 : 1;
+        replayFlowchart();
+    }
+
+    // ─── Section Scroll-Reveal Animations ──────────────────────
+    function initSectionReveal() {
+        const sections = document.querySelectorAll('.section-reveal');
+
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const section = entry.target;
+                        revealSection(section);
+                        observer.unobserve(section);
+                    }
+                });
+            }, {
+                threshold: 0.12,
+                rootMargin: '0px 0px -40px 0px'
+            });
+
+            sections.forEach(section => observer.observe(section));
+
+            // Check already-visible sections immediately
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top < window.innerHeight * 0.85) {
+                    revealSection(section);
+                    observer.unobserve(section);
+                }
+            });
+        } else {
+            // Fallback: reveal all immediately
+            sections.forEach(s => revealSection(s));
+        }
+    }
+
+    function revealSection(section) {
+        section.classList.add('revealed');
+
+        // Stagger children animation with anime.js
+        const staggerEls = section.querySelectorAll('.reveal-stagger');
+        const chartEls = section.querySelectorAll('.chart-reveal');
+
+        if (staggerEls.length > 0) {
+            anime({
+                targets: staggerEls,
+                opacity: [0, 1],
+                translateY: [12, 0],
+                duration: 250,
+                delay: anime.stagger(40, {start: 30}),
+                easing: 'easeOutCubic'
+            });
+        } else {
+            // If no stagger children but section itself is revealed, force children visible
+            section.querySelectorAll('.card, .cohort-item, .lit-paper, .methodology-card, .innovation-item, .lit-stat-card').forEach(el => {
+                el.style.opacity = '1';
+                el.style.transform = '';
+            });
+        }
+
+        if (chartEls.length > 0) {
+            anime({
+                targets: chartEls,
+                opacity: [0, 1],
+                scale: [0.98, 1],
+                duration: 300,
+                delay: anime.stagger(50, {start: 50}),
+                easing: 'easeOutCubic'
+            });
+
+            // Trigger Chart.js resize/re-animation for charts in this section
+            setTimeout(() => {
+                const canvases = section.querySelectorAll('canvas');
+                canvases.forEach(canvas => {
+                    const chartId = canvas.id;
+                    if (chartId && Chart.getChart(chartId)) {
+                        Chart.getChart(chartId).resize();
+                    }
+                });
+            }, 400);
+        }
+    }
+
+    // ─── Init ──────────────────────────────────────────────────
+    window.addEventListener('load', () => {
+        // Init section scroll-reveal
+        setTimeout(initSectionReveal, 100);
+
+        // Init flowchart
+        setTimeout(() => {
+            buildFlowArrows();
+            animateFlowchart();
+        }, 500);
+    });
+
+    window.addEventListener('resize', () => {
+        buildFlowArrows();
+    });
+    </script>
+</body>
+</html>

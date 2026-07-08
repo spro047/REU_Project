@@ -1,0 +1,18 @@
+# macOS metadata
+__MACOSX/
+._*
+.DS_Store
+
+# Raw suture images (too large for git — ~785 MB total)
+dataset/Train_cohort/
+dataset/Validation_cohort/
+dataset/Application_cohort/
+
+# Codegraph index
+.codegraph/
+
+# Research paper PDFs (download separately)
+research_papers/
+
+# Temp scripts
+temp_*.py
