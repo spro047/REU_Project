@@ -1120,7 +1120,7 @@
             <div class="why-it-matters">
                 <h3>Why This Research Matters</h3>
                 <p>
-                    This research helps create an <strong>AI assistant</strong> that can automatically evaluate suture quality, giving medical students instant feedback on their practice. Instead of waiting for a teacher to check their work, students can get immediate, consistent grading — like having a personal coach available 24/7. The AI learns from thousands of examples scored by experts, then can grade new sutures on its own.
+                    This research helps create an <strong>AI assistant</strong> that can automatically evaluate suture quality, giving medical students instant feedback on their practice. Instead of waiting for a teacher to check their work, students can get immediate, consistent grading — like having a personal coach available 24/7. The AI learns from surgical training videos where expert surgeons have scored the suture quality, then can grade new sutures on its own. The video frame extraction pipeline enables larger, more diverse training data from routine training recordings.
                 </p>
             </div>
         </div>
@@ -1131,17 +1131,17 @@
             <div class="grid grid-4">
                 <div class="card reveal-stagger">
                     <div class="card-header">
-                        <span class="card-title">Total Images</span>
+                        <span class="card-title">Source Videos</span>
                     </div>
-                    <div class="card-value">1,648</div>
-                    <div class="card-subtitle">Across 3 cohorts</div>
+                    <div class="card-value">3</div>
+                    <div class="card-subtitle">4K MOV files from JNMC</div>
                 </div>
                 <div class="card reveal-stagger">
                     <div class="card-header">
-                        <span class="card-title">Annotated</span>
+                        <span class="card-title">Expected Frames</span>
                     </div>
-                    <div class="card-value">1,216</div>
-                    <div class="card-subtitle">73.8% of total</div>
+                    <div class="card-value">~1,000</div>
+                    <div class="card-subtitle">After quality filtering</div>
                 </div>
                 <div class="card reveal-stagger">
                     <div class="card-header">
@@ -1158,32 +1158,38 @@
                     <div class="card-subtitle">Expert ratings</div>
                 </div>
             </div>
+            <div class="insight-box" style="margin-top: var(--spacing-lg);">
+                <p><strong>Data source change:</strong> The original dataset of 1,648 pre-extracted PNG images (FDP + Hubli institutions) is no longer available. The current pipeline ingests raw 4K surgical training videos from <strong>JNMC</strong> and extracts frames using an adaptive quality-aware extraction pipeline. This adds a video preprocessing phase but enables reconfigurable dataset construction.</p>
+            </div>
         </section>
 
         <!-- Cohort Distribution -->
         <section class="section section-reveal">
-            <h2 class="section-title">Cohort Distribution</h2>
+            <h2 class="section-title">Cohort Distribution (Estimated from Video Extraction)</h2>
             <div class="cohort-grid">
                 <div class="cohort-item">
-                    <div class="cohort-value">1,010</div>
-                    <div class="cohort-label">Training Set</div>
+                    <div class="cohort-value">~600</div>
+                    <div class="cohort-label">Training Set ~60%</div>
                 </div>
                 <div class="cohort-item">
-                    <div class="cohort-value">206</div>
-                    <div class="cohort-label">Validation Set</div>
+                    <div class="cohort-value">~150</div>
+                    <div class="cohort-label">Validation Set ~15%</div>
                 </div>
                 <div class="cohort-item">
-                    <div class="cohort-value">160</div>
-                    <div class="cohort-label">Application (2-week)</div>
+                    <div class="cohort-value">~250</div>
+                    <div class="cohort-label">Application Cohort ~25%</div>
                 </div>
                 <div class="cohort-item">
-                    <div class="cohort-value">160</div>
-                    <div class="cohort-label">Application (4-week)</div>
+                    <div class="cohort-value">3</div>
+                    <div class="cohort-label">Source Videos</div>
                 </div>
                 <div class="cohort-item">
-                    <div class="cohort-value">112</div>
-                    <div class="cohort-label">Application (Resident)</div>
+                    <div class="cohort-value">video-1</div>
+                    <div class="cohort-label">75% usable (best)</div>
                 </div>
+            </div>
+            <div class="insight-box">
+                <p><strong>Note:</strong> Exact frame counts depend on video quality after extraction. video-1 yields ~75% usable frames (best), video-3 is ~98% blurry (limited yield). video-2 is still downloading. Total 700–1,500 frames expected after adaptive sampling + quality filtering. The original dataset had 1,648 images (1,010 train / 206 val / 432 application) from 3 institutions — no longer available.</p>
             </div>
         </section>
 
@@ -1404,7 +1410,7 @@
         <section class="section">
             <h2 class="section-title">Methodology — Suture-Q AI Framework</h2>
             <p style="font-size: 0.95rem; margin-bottom: var(--spacing-lg); max-width: 800px; color: var(--color-text-secondary);">
-                Interactive pipeline &mdash; designed from literature limitations. Hover any node or click <strong>Replay</strong> below.
+                Frames extracted from 4K surgical training videos → preprocessed → scored by 6 regression heads with uncertainty. Hover any node or click <strong>Replay</strong> below.
             </p>
 
             <div class="methodology-controls">
@@ -1416,12 +1422,24 @@
                 <!-- SVG for connection paths - rendered here -->
                 <svg class="flowchart-svg" id="flowSvg" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMax meet"></svg>
 
+                <!-- Row 0: Video Frame Extraction -->
+                <div class="flow-row">
+                    <div class="flow-node node-input" id="fn-extract">
+                        <span class="node-icon">&#9654;</span>
+                        VIDEO FRAME EXTRACTION
+                        <span class="node-label">4K MOV &bull; Quality Scan &bull; Adaptive Sampling &bull; PNG</span>
+                    </div>
+                </div>
+
+                <div class="flow-connector" id="conn-0"></div>
+                <div class="flow-arrow-down" id="arrow-0">&#9661;</div>
+
                 <!-- Row 1: Input -->
                 <div class="flow-row">
                     <div class="flow-node node-input" id="fn-input">
                         <span class="node-icon">&#9633;</span>
-                        INPUT IMAGE
-                        <span class="node-label">PNG &bull; 512&times;512 &bull; Top-down</span>
+                        EXTRACTED FRAME
+                        <span class="node-label">PNG &bull; 384&times;384 &bull; Normalized</span>
                     </div>
                 </div>
 
@@ -1700,7 +1718,7 @@
             </details>
 
             <div class="insight-box" style="margin-bottom: var(--spacing-xl);">
-                <p><strong>Key gap identified:</strong> No publicly available suture-specific image dataset with expert quality ratings exists — making <strong>our dataset of 1,648 images with 6-dimensional expert annotations</strong> uniquely valuable. Most prior work uses video/kinematics; our static-image approach is novel and underexplored.</p>
+                <p><strong>Key gap identified:</strong> No publicly available suture-specific image dataset with expert quality ratings exists — making <strong>our dataset (extracted frames from surgical training videos with 6-dimensional expert annotations)</strong> uniquely valuable. Most prior work uses pre-existing video/kinematics datasets; our extraction pipeline from raw 4K training videos is a pragmatic response to real-world data acquisition constraints.</p>
             </div>
 
             <div class="grid grid-2">
@@ -1709,9 +1727,10 @@
                         <span class="card-title">What We Adopt from Literature</span>
                     </div>
                     <ul style="font-size: 0.875rem; line-height: 1.8; list-style: none; padding: 0;">
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✓ Quality-aware frame extraction from raw surgical videos</li>
                         <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✓ Slack as primary quality predictor (highest correlation)</li>
                         <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✓ Spacing irregularity → mechanical strength link (Spagnulo)</li>
-                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✓ Vision-only approach (Pan — no sensors needed)</li>
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✓ Vision-only approach with uncertainty (Pan + MC Dropout)</li>
                         <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✓ Messick validity framework for evaluation (Boal)</li>
                         <li style="padding: var(--spacing-sm) 0;">✓ Multi-metric scoring (LS-CAT approach)</li>
                     </ul>
@@ -1721,9 +1740,9 @@
                         <span class="card-title">Our Differentiators</span>
                     </div>
                     <ul style="font-size: 0.875rem; line-height: 1.8; list-style: none; padding: 0;">
-                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ Largest suture-specific dataset (1,648 images)</li>
-                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ Static image analysis (not video-based)</li>
-                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ 6-dimensional expert quality annotations</li>
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ Adaptive frame extraction from raw 4K training videos</li>
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ Quality-aware pipeline (brightness/sharpness/duplicate filtering)</li>
+                        <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ 6-dimensional expert quality annotations per frame</li>
                         <li style="padding: var(--spacing-sm) 0; border-bottom: 1px solid #d4cfc6;">✦ Real clinical training environment data</li>
                         <li style="padding: var(--spacing-sm) 0;">✦ Addresses the small-dataset gap in literature</li>
                     </ul>
@@ -1732,8 +1751,8 @@
         </section>
 
         <footer>
-            <p>Dataset Analysis — Framework for AI in Quality Control of Suturing</p>
-            <p style="margin-top: var(--spacing-xs);">Generated July 2026 — D:\REU\dataset</p>
+            <p>Dataset Analysis — AI Framework for Quality Control of Suturing</p>
+            <p style="margin-top: var(--spacing-xs);">Generated July 2026 — JNMC Surgical Training Videos | Frame Extraction Pipeline</p>
         </footer>
     </div>
 
@@ -2027,6 +2046,7 @@
         // Define node-to-node connections as SVG paths
         // Each: [fromId, toId, label]
         const connections = [
+            ['fn-extract',  'fn-input',       ''],
             ['fn-input',    'fn-augment',     ''],
             ['fn-augment',  'fn-backbone',    ''],
             ['fn-backbone', 'fn-overall',     ''],
@@ -2122,45 +2142,48 @@
 
         // Build sequence: [selector, delay, duration]
         const sequence = [
-            ['#fn-input',          0,    600],
-            ['#conn-1, #arrow-1',  600,  400],
-            ['#fn-augment',        1000, 600],
-            ['#conn-2, #arrow-2',  1600, 400],
-            ['#fn-backbone',       2000, 600],
-            ['#conn-3, #arrow-3',  2600, 400],
-            ['#label-heads',       3000, 400],
-            ['#fn-overall',        3200, 400],
-            ['#fn-isd',            3400, 400],
-            ['#fn-slack',          3600, 400],
-            ['#fn-pos',            3800, 400],
-            ['#fn-ang',            4000, 400],
-            ['#fn-width',          4200, 400],
-            ['#conn-4, #arrow-4',  4600, 400],
-            ['#fn-uncertainty',    5000, 600],
-            ['#conn-5, #arrow-5',  5600, 400],
-            ['#fn-explain',        6000, 600],
-            ['#conn-6, #arrow-6',  6600, 400],
-            ['#fn-output',         7000, 700]
+            ['#fn-extract',        0,    600],
+            ['#conn-0, #arrow-0',  600,  400],
+            ['#fn-input',          1000, 600],
+            ['#conn-1, #arrow-1',  1600, 400],
+            ['#fn-augment',        2000, 600],
+            ['#conn-2, #arrow-2',  2600, 400],
+            ['#fn-backbone',       3000, 600],
+            ['#conn-3, #arrow-3',  3600, 400],
+            ['#label-heads',       4000, 400],
+            ['#fn-overall',        4200, 400],
+            ['#fn-isd',            4400, 400],
+            ['#fn-slack',          4600, 400],
+            ['#fn-pos',            4800, 400],
+            ['#fn-ang',            5000, 400],
+            ['#fn-width',          5200, 400],
+            ['#conn-4, #arrow-4',  5600, 400],
+            ['#fn-uncertainty',    6000, 600],
+            ['#conn-5, #arrow-5',  6600, 400],
+            ['#fn-explain',        7000, 600],
+            ['#conn-6, #arrow-6',  7600, 400],
+            ['#fn-output',         8000, 700]
         ];
 
         // Build SVG connections animation based on when both nodes are visible
         const svgPathAnim = [
-            ['fn-input fn-augment',             600,  500],
-            ['fn-augment fn-backbone',          1600, 500],
-            ['fn-backbone fn-overall',          2600, 400],
-            ['fn-backbone fn-isd',              2600, 400],
-            ['fn-backbone fn-slack',            2600, 400],
-            ['fn-backbone fn-pos',              2600, 400],
-            ['fn-backbone fn-ang',              2600, 400],
-            ['fn-backbone fn-width',            2600, 400],
-            ['fn-overall fn-uncertainty',       4600, 400],
-            ['fn-isd fn-uncertainty',           4600, 400],
-            ['fn-slack fn-uncertainty',         4600, 400],
-            ['fn-pos fn-uncertainty',           4600, 400],
-            ['fn-ang fn-uncertainty',           4600, 400],
-            ['fn-width fn-uncertainty',         4600, 400],
-            ['fn-uncertainty fn-explain',       5600, 400],
-            ['fn-explain fn-output',            6600, 400]
+            ['fn-extract fn-input',             0,    500],
+            ['fn-input fn-augment',             1600, 500],
+            ['fn-augment fn-backbone',          2600, 500],
+            ['fn-backbone fn-overall',          3600, 400],
+            ['fn-backbone fn-isd',              3600, 400],
+            ['fn-backbone fn-slack',            3600, 400],
+            ['fn-backbone fn-pos',              3600, 400],
+            ['fn-backbone fn-ang',              3600, 400],
+            ['fn-backbone fn-width',            3600, 400],
+            ['fn-overall fn-uncertainty',       5600, 400],
+            ['fn-isd fn-uncertainty',           5600, 400],
+            ['fn-slack fn-uncertainty',         5600, 400],
+            ['fn-pos fn-uncertainty',           5600, 400],
+            ['fn-ang fn-uncertainty',           5600, 400],
+            ['fn-width fn-uncertainty',         5600, 400],
+            ['fn-uncertainty fn-explain',       6600, 400],
+            ['fn-explain fn-output',            7600, 400]
         ];
 
         // Run node animations with anime.js staggered timeline

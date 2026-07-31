@@ -16,3 +16,9 @@ research_papers/
 
 # Temp scripts
 temp_*.py
+
+# Raw dataset (too large for git — 18.5 GB)
+Dataset_From_JNMC/
+
+# Agent working directory
+.omo/
