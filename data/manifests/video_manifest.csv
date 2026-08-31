@@ -1,0 +1,10 @@
+video_id,filename,source_path,file_size_bytes,width,height,fps,frame_count,duration_seconds,orientation,readable,operator_id,stitch_count_status,usable_segment_count,excluded_segment_count,notes
+video-1,video-1.MOV,Dataset_From_JNMC\video-1.MOV,1470855769,3840,2160,23.996913580246915,7775,324.0,landscape,True,unknown,unknown,20,0,
+video-10,video-10.mov,Dataset_From_JNMC\video-10.mov,2693513871,3840,2160,29.994430160400128,17771,592.4766666666667,landscape,True,unknown,unknown,20,0,
+video-2,video-2.MOV,Dataset_From_JNMC\video-2.MOV,3767663829,3840,2160,23.996982877831694,19884,828.6041666666666,landscape,True,unknown,unknown,20,0,
+video-3,video-3.mov,Dataset_From_JNMC\video-3.mov,1791107747,3840,2160,29.93005572692537,11789,393.885,landscape,True,unknown,unknown,20,0,
+video-5,video-5.mov,Dataset_From_JNMC\video-5.mov,1022727468,2160,3840,29.99444053222638,6744,224.84166666666667,portrait,True,unknown,unknown,20,0,
+video-6,video-6.mov,Dataset_From_JNMC\video-6.mov,2657598348,3840,2160,29.994421638321914,17475,582.6083333333333,landscape,True,unknown,unknown,20,0,
+video-7,video-7.mov,Dataset_From_JNMC\video-7.mov,557574652,2160,3840,29.994283692190436,3673,122.45666666666666,portrait,True,unknown,unknown,20,0,
+video-8,video-8.mov,Dataset_From_JNMC\video-8.mov,1485101960,2160,3840,29.994463128537447,9751,325.0933333333333,portrait,True,unknown,unknown,20,0,
+video-9,video-9.mov,Dataset_From_JNMC\video-9.mov,4041058004,3840,2160,29.994425665213335,26635,887.9983333333333,landscape,True,unknown,unknown,20,0,
