@@ -17,8 +17,14 @@ def build_valid_schema() -> dict[str, list[Label]]:
     for name in ["wound_pad", "needle", "thread", "entry_point", "exit_point", "knot"]:
         labels.append({"name": name, "type": "polygon"})
     stitch_attributes = [
-        *[build_attribute(name, "number") for name in QUALITY_ATTRIBUTES],
-        *[build_attribute(name, "text") for name in ["stitch_id", "annotator_id"]],
+        *[
+            build_attribute(name, "number", ["1", "10", "1"])
+            for name in QUALITY_ATTRIBUTES
+        ],
+        *[
+            build_attribute(name, "text", [""])
+            for name in ["stitch_id", "annotator_id"]
+        ],
         build_attribute(
             "review_status", "select", ["pending", "reviewed", "agreed", "disputed"]
         ),
@@ -26,9 +32,11 @@ def build_valid_schema() -> dict[str, list[Label]]:
             "visibility", "select", ["visible", "partially_occluded", "occluded"]
         ),
     ]
-    labels.append({"name": "stitch", "type": "rect", "attributes": stitch_attributes})
+    labels.append(
+        {"name": "stitch", "type": "rectangle", "attributes": stitch_attributes}
+    )
     for name in ["needle_entry", "needle_exit", "knot_formation", "stitch_completion"]:
-        labels.append({"name": name, "type": "rect"})
+        labels.append({"name": name, "type": "rectangle"})
     return {"labels": labels}
 
 
@@ -112,5 +120,20 @@ def test_select_attribute_without_values_fails() -> None:
         validate_schema(schema)
     except SchemaError as error:
         assert "review_status" in str(error)
+    else:
+        raise AssertionError("expected SchemaError")
+
+
+def test_number_attribute_requires_three_values() -> None:
+    schema = build_valid_schema()
+    stitch = next(label for label in schema["labels"] if label["name"] == "stitch")
+    stitch["attributes"] = [
+        a if a["name"] != "overall" else build_attribute("overall", "number", ["1"])
+        for a in stitch_attributes(schema)
+    ]
+    try:
+        validate_schema(schema)
+    except SchemaError as error:
+        assert "overall" in str(error)
     else:
         raise AssertionError("expected SchemaError")

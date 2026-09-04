@@ -30,14 +30,14 @@ REQUIRED_LABELS: Final[frozenset[str]] = frozenset(
 )
 ALLOWED_TYPES: Final[frozenset[str]] = frozenset(
     {
-        "rect",
+        "rectangle",
         "polygon",
         "polyline",
         "points",
         "ellipse",
-        "tag",
-        "skeleton",
         "cuboid",
+        "skeleton",
+        "tag",
         "mask",
     }
 )
@@ -104,9 +104,13 @@ def validate_schema(data: Mapping[str, object]) -> None:
                 raise SchemaError(
                     f"attribute {attribute.get('name')!r} has invalid input_type {input_type!r}"
                 )
-            if input_type in {"select", "radio"} and not attribute.get("values"):
+            if not attribute.get("values"):
                 raise SchemaError(
-                    f"attribute {attribute.get('name')!r} of type {input_type} needs values"
+                    f"attribute {attribute.get('name')!r} must have non-empty values"
+                )
+            if input_type == "number" and len(attribute["values"]) != 3:
+                raise SchemaError(
+                    f"number attribute {attribute.get('name')!r} needs exactly three values (min, max, step)"
                 )
         labels[name] = label
     missing = REQUIRED_LABELS - set(labels)

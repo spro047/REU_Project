@@ -67,21 +67,21 @@
     },
     {
       "name": "stitch",
-      "type": "rect",
+      "type": "rectangle",
       "attributes": [
         {
           "name": "stitch_id",
           "mutable": true,
           "input_type": "text",
           "default_value": "",
-          "values": []
+          "values": [""]
         },
         {
           "name": "annotator_id",
           "mutable": true,
           "input_type": "text",
           "default_value": "",
-          "values": []
+          "values": [""]
         },
         {
           "name": "review_status",
@@ -102,48 +102,48 @@
           "mutable": true,
           "input_type": "number",
           "default_value": "1",
-          "values": []
+          "values": ["1", "10", "1"]
         },
         {
           "name": "isd",
           "mutable": true,
           "input_type": "number",
           "default_value": "1",
-          "values": []
+          "values": ["1", "10", "1"]
         },
         {
           "name": "slack",
           "mutable": true,
           "input_type": "number",
           "default_value": "1",
-          "values": []
+          "values": ["1", "10", "1"]
         },
         {
           "name": "position",
           "mutable": true,
           "input_type": "number",
           "default_value": "1",
-          "values": []
+          "values": ["1", "10", "1"]
         },
         {
           "name": "angulation",
           "mutable": true,
           "input_type": "number",
           "default_value": "1",
-          "values": []
+          "values": ["1", "10", "1"]
         },
         {
           "name": "width",
           "mutable": true,
           "input_type": "number",
           "default_value": "1",
-          "values": []
+          "values": ["1", "10", "1"]
         }
       ]
     },
     {
       "name": "knot",
-      "type": "rect",
+      "type": "rectangle",
       "attributes": [
         {
           "name": "visibility",
@@ -156,7 +156,7 @@
     },
     {
       "name": "needle_entry",
-      "type": "rect",
+      "type": "rectangle",
       "attributes": [
         {
           "name": "visibility",
@@ -169,7 +169,7 @@
     },
     {
       "name": "needle_exit",
-      "type": "rect",
+      "type": "rectangle",
       "attributes": [
         {
           "name": "visibility",
@@ -182,7 +182,7 @@
     },
     {
       "name": "knot_formation",
-      "type": "rect",
+      "type": "rectangle",
       "attributes": [
         {
           "name": "visibility",
@@ -195,7 +195,7 @@
     },
     {
       "name": "stitch_completion",
-      "type": "rect",
+      "type": "rectangle",
       "attributes": [
         {
           "name": "visibility",

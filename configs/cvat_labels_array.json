@@ -1,0 +1,208 @@
+[
+  {
+    "name": "wound_pad",
+    "type": "polygon",
+    "attributes": [
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      }
+    ]
+  },
+  {
+    "name": "needle",
+    "type": "polygon",
+    "attributes": [
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      }
+    ]
+  },
+  {
+    "name": "thread",
+    "type": "polyline",
+    "attributes": [
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      }
+    ]
+  },
+  {
+    "name": "entry_point",
+    "type": "points",
+    "attributes": [
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      }
+    ]
+  },
+  {
+    "name": "exit_point",
+    "type": "points",
+    "attributes": [
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      }
+    ]
+  },
+  {
+    "name": "stitch",
+    "type": "rectangle",
+    "attributes": [
+      {
+        "name": "stitch_id",
+        "mutable": true,
+        "input_type": "text",
+        "default_value": "",
+        "values": [""]
+      },
+      {
+        "name": "annotator_id",
+        "mutable": true,
+        "input_type": "text",
+        "default_value": "",
+        "values": [""]
+      },
+      {
+        "name": "review_status",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "pending",
+        "values": ["pending", "reviewed", "agreed", "disputed"]
+      },
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      },
+      {
+        "name": "overall",
+        "mutable": true,
+        "input_type": "number",
+        "default_value": "1",
+        "values": ["1", "10", "1"]
+      },
+      {
+        "name": "isd",
+        "mutable": true,
+        "input_type": "number",
+        "default_value": "1",
+        "values": ["1", "10", "1"]
+      },
+      {
+        "name": "slack",
+        "mutable": true,
+        "input_type": "number",
+        "default_value": "1",
+        "values": ["1", "10", "1"]
+      },
+      {
+        "name": "position",
+        "mutable": true,
+        "input_type": "number",
+        "default_value": "1",
+        "values": ["1", "10", "1"]
+      },
+      {
+        "name": "angulation",
+        "mutable": true,
+        "input_type": "number",
+        "default_value": "1",
+        "values": ["1", "10", "1"]
+      },
+      {
+        "name": "width",
+        "mutable": true,
+        "input_type": "number",
+        "default_value": "1",
+        "values": ["1", "10", "1"]
+      }
+    ]
+  },
+  {
+    "name": "knot",
+    "type": "rectangle",
+    "attributes": [
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      }
+    ]
+  },
+  {
+    "name": "needle_entry",
+    "type": "rectangle",
+    "attributes": [
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      }
+    ]
+  },
+  {
+    "name": "needle_exit",
+    "type": "rectangle",
+    "attributes": [
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      }
+    ]
+  },
+  {
+    "name": "knot_formation",
+    "type": "rectangle",
+    "attributes": [
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      }
+    ]
+  },
+  {
+    "name": "stitch_completion",
+    "type": "rectangle",
+    "attributes": [
+      {
+        "name": "visibility",
+        "mutable": true,
+        "input_type": "select",
+        "default_value": "visible",
+        "values": ["visible", "partially_occluded", "occluded"]
+      }
+    ]
+  }
+]
