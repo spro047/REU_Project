@@ -104,11 +104,14 @@ def validate_schema(data: Mapping[str, object]) -> None:
                 raise SchemaError(
                     f"attribute {attribute.get('name')!r} has invalid input_type {input_type!r}"
                 )
-            if not attribute.get("values"):
+            values = attribute.get("values")
+            if not values:
                 raise SchemaError(
                     f"attribute {attribute.get('name')!r} must have non-empty values"
                 )
-            if input_type == "number" and len(attribute["values"]) != 3:
+            if input_type == "number" and (
+                not isinstance(values, list) or len(values) != 3
+            ):
                 raise SchemaError(
                     f"number attribute {attribute.get('name')!r} needs exactly three values (min, max, step)"
                 )

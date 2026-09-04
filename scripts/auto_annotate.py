@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import argparse
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+from itertools import pairwise
 from pathlib import Path
 
 import cv2
@@ -39,7 +40,7 @@ class FrameAnnotation:
 
 def largest_component(mask: np.ndarray) -> np.ndarray:
     """Return a mask of only the largest connected component."""
-    count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+    count, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
     if count <= 1:
         return np.zeros_like(mask)
     largest = int(np.argmax(stats[1:, cv2.CC_STAT_AREA]) + 1)
@@ -50,8 +51,13 @@ def pad_region(frame: np.ndarray) -> np.ndarray:
     """Segment the surgical pad as the largest non-background color region."""
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     pixels = hsv.reshape(-1, 3).astype(np.float32)
+    best_labels = np.zeros((pixels.shape[0], 1), dtype=np.int32)
     _, labels, _ = cv2.kmeans(
-        pixels, 3, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0), 1,
+        pixels,
+        3,
+        best_labels,
+        (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0),
+        1,
         cv2.KMEANS_PP_CENTERS,
     )
     label_map = labels.reshape(hsv.shape[:2])
@@ -164,7 +170,9 @@ def draw_shapes(frame: np.ndarray, shapes: list[Shape]) -> np.ndarray:
     return frame
 
 
-def write_preview(records: list[FrameAnnotation], frame_dir: Path, output_path: Path) -> None:
+def write_preview(
+    records: list[FrameAnnotation], frame_dir: Path, output_path: Path
+) -> None:
     """Write one contact-sheet PNG per video with drawn annotations."""
     rows, cols = PREVIEW_GRID
     cell = 192
@@ -190,7 +198,9 @@ def write_preview(records: list[FrameAnnotation], frame_dir: Path, output_path: 
     _ = cv2.imwrite(str(output_path), sheet)
 
 
-def write_json(records: list[FrameAnnotation], video_id: str, output_path: Path) -> None:
+def write_json(
+    records: list[FrameAnnotation], video_id: str, output_path: Path
+) -> None:
     """Write the annotation store as versioned JSON."""
     payload = {
         "video_id": video_id,
@@ -223,7 +233,7 @@ def main() -> int:
     pad_count = sum(1 for r in records if any(s.label == "wound_pad" for s in r.shapes))
     needle_count = sum(1 for r in records if any(s.label == "needle" for s in r.shapes))
     thread_count = sum(1 for r in records if any(s.label == "thread" for s in r.shapes))
-    transitions = sum(1 for a, b in zip(needle_presence, needle_presence[1:]) if a != b)
+    transitions = sum(1 for a, b in pairwise(needle_presence) if a != b)
     print(
         f"video={args.video} annotated_frames={len(records)} pad={pad_count} "
         f"needle={needle_count} thread={thread_count} transitions={transitions}"
