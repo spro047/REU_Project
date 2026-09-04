@@ -16,7 +16,7 @@ Labels are defined in `configs/cvat_labels.json` and validated by `scripts/valid
 1. Start the local CVAT server (see deployment notes).
 2. Create a project, then import `configs/cvat_labels.json` as the label source.
 3. Create one task per video from the extracted frames in `data/frames/<video_id>/`. Frames are already 384x384 PNGs named `frame_000001.png` and up, in timestamp order.
-4. Work in **video mode** so tracks and interpolation are available.
+4. Work in **image mode** (tasks are built from the extracted frame sequence). Tracks and interpolation still work across image sequences, so annotate only key frames and let CVAT interpolate between them.
 
 ## Key frames vs event intervals
 
