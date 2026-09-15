@@ -33,6 +33,91 @@ EPOCHS: int = 12
 BATCH_SIZE: int = 16
 BASE_CHANNELS: int = 32
 TEST_FRAMES_CAP: int = 60
+COPY_PASTE_PROBABILITY: float = 0.5
+SCE_ALPHA: float = 1.0
+SCE_BETA: float = 0.1
+
+
+def clahe_frame(frame: np.ndarray, clip_limit: float = 2.0) -> np.ndarray:
+    """Apply CLAHE to the L channel of LAB to even out illumination."""
+    lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+    lightness, a_channel, b_channel = cv2.split(lab)
+    adjusted = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8)).apply(
+        lightness
+    )
+    return cv2.cvtColor(cv2.merge([adjusted, a_channel, b_channel]), cv2.COLOR_LAB2BGR)
+
+
+def symmetric_cross_entropy(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    alpha: float = SCE_ALPHA,
+    beta: float = SCE_BETA,
+    weight: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Noise-robust Symmetric Cross Entropy loss."""
+    ce = torch.nn.functional.cross_entropy(logits, targets, weight=weight)
+    probs = torch.nn.functional.softmax(logits, dim=1)
+    one_hot = (
+        torch.nn.functional.one_hot(targets, num_classes=logits.shape[1])
+        .permute(0, 3, 1, 2)
+        .float()
+    )
+    reverse = -(one_hot * probs.clamp(min=1e-8).log()).sum(dim=1).mean()
+    return alpha * ce + beta * reverse
+
+
+def copy_paste(
+    batch: torch.Tensor,
+    masks: torch.Tensor,
+    rng: np.random.Generator,
+    probability: float = COPY_PASTE_PROBABILITY,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Paste a foreground patch from one sample onto another in the batch."""
+    if batch.shape[0] < 2 or rng.random() > probability:
+        return batch, masks
+    source_index = int(rng.integers(batch.shape[0]))
+    target_index = int(rng.integers(batch.shape[0] - 1))
+    if target_index >= source_index:
+        target_index += 1
+    source_mask = masks[source_index]
+    candidate_classes = [
+        class_id for class_id in (2, 3) if int((source_mask == class_id).sum()) > 0
+    ]
+    if not candidate_classes:
+        return batch, masks
+    class_id = candidate_classes[int(rng.integers(len(candidate_classes)))]
+    pixels = (source_mask == class_id).nonzero()
+    if pixels.shape[0] == 0:
+        return batch, masks
+    min_row = int(pixels[:, 0].min())
+    max_row = int(pixels[:, 0].max())
+    min_col = int(pixels[:, 1].min())
+    max_col = int(pixels[:, 1].max())
+    height = max_row - min_row + 1
+    width = max_col - min_col + 1
+    rows = masks.shape[1]
+    cols = masks.shape[2]
+    if height >= rows or width >= cols:
+        return batch, masks
+    offset_row = int(rng.integers(0, rows - height))
+    offset_col = int(rng.integers(0, cols - width))
+    patch = source_mask[min_row : max_row + 1, min_col : max_col + 1] == class_id
+    target_pixels = masks[
+        target_index, offset_row : offset_row + height, offset_col : offset_col + width
+    ]
+    target_pixels[patch] = class_id
+    for channel in range(3):
+        source_patch = batch[
+            source_index, channel, min_row : max_row + 1, min_col : max_col + 1
+        ]
+        batch[
+            target_index,
+            channel,
+            offset_row : offset_row + height,
+            offset_col : offset_col + width,
+        ][patch] = source_patch[patch]
+    return batch, masks
 
 
 def mask_to_tensor(mask: np.ndarray) -> torch.Tensor:
@@ -91,12 +176,16 @@ class TinyUNet(nn.Module):
         return self.head(x)
 
 
-def load_frame_tensor(video_id: str, frame_name: str, frames_dir: Path) -> torch.Tensor:
+def load_frame_tensor(
+    video_id: str, frame_name: str, frames_dir: Path, use_clahe: bool = True
+) -> torch.Tensor:
     """Load one frame as a normalized (3, H, W) tensor."""
     frame = cv2.imread(str(frame_path(video_id, frame_name, frames_dir)))
     if frame is None:
         raise RuntimeError(f"could not read frame {video_id}/{frame_name}")
     resized = cv2.resize(frame, (GRID_SIZE, GRID_SIZE))
+    if use_clahe:
+        resized = clahe_frame(resized)
     rgb = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
     return torch.from_numpy(rgb.transpose(2, 0, 1))
 
@@ -137,7 +226,12 @@ def main() -> int:
     parser.add_argument(
         "--checkpoint", type=Path, default=Path("data/models/geometry_unet.pt")
     )
+    parser.add_argument("--clahe", action="store_true")
+    parser.add_argument("--no-sce", action="store_true")
+    parser.add_argument("--no-copy-paste", action="store_true")
     args = parser.parse_args()
+    torch.manual_seed(0)
+    np.random.seed(0)
     with args.manifest.open(encoding="utf-8") as handle:
         rows = [row for row in csv.DictReader(handle) if row["status"] == "selected"]
     train_rows = [
@@ -158,7 +252,9 @@ def main() -> int:
         for row in frame_rows:
             frame_name = Path(row["output_path"]).name
             inputs.append(
-                load_frame_tensor(row["video_id"], frame_name, args.frames_dir)
+                load_frame_tensor(
+                    row["video_id"], frame_name, args.frames_dir, use_clahe=args.clahe
+                )
             )
             shapes = load_annotation(row["video_id"], frame_name, args.annotations_dir)
             masks.append(build_class_mask(shapes, GRID_SIZE))
@@ -168,7 +264,8 @@ def main() -> int:
     val_inputs, val_masks = build_inputs(val_split)
     model = TinyUNet()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-    loss_fn = nn.CrossEntropyLoss(weight=class_weights(train_masks))
+    weights = class_weights(train_masks)
+    rng = np.random.default_rng(0)
     best_state: dict[str, torch.Tensor] | None = None
     best_score = -1.0
     for epoch in range(EPOCHS):
@@ -180,8 +277,15 @@ def main() -> int:
             target = torch.stack(
                 [mask_to_tensor(train_masks[index]) for index in indices]
             )
+            if not args.no_copy_paste:
+                batch, target = copy_paste(batch, target, rng)
             optimizer.zero_grad()
-            loss = loss_fn(model(batch), target)
+            logits = model(batch)
+            loss = (
+                symmetric_cross_entropy(logits, target, weight=weights)
+                if not args.no_sce
+                else nn.CrossEntropyLoss(weight=weights)(logits, target)
+            )
             loss.backward()
             optimizer.step()
         model.eval()
@@ -215,7 +319,10 @@ def main() -> int:
                 continue
             logits = model(
                 load_frame_tensor(
-                    row["video_id"], frame_name, args.frames_dir
+                    row["video_id"],
+                    frame_name,
+                    args.frames_dir,
+                    use_clahe=args.clahe,
                 ).unsqueeze(0)
             )
             prediction = logits.argmax(dim=1)[0].numpy()
@@ -239,6 +346,7 @@ def main() -> int:
         "# Deep Geometry Baseline Report",
         "",
         f"Model: TinyUNet ({sum(p.numel() for p in model.parameters()):,} params), CPU, {GRID_SIZE}x{GRID_SIZE}",
+        f"Config: clahe={args.clahe} sce={not args.no_sce} copy_paste={not args.no_copy_paste}",
         f"Train frames: {len(train_split)} (capped {TRAIN_FRAMES_CAP}), val: {len(val_split)}, test: {len(test_truths)}",
         f"Best val mean IoU: {best_score:.4f}",
         f"Pixel accuracy (test): {accuracy:.4f}",
