@@ -1,13 +1,12 @@
 """Build the pipeline demonstration notebook from reusable pipeline code.
 
-Run with: uv run --with nbformat python -m scripts.build_notebook
+Run with: uv run python -m scripts.build_notebook
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
-
-import nbformat
 
 OUTPUT_PATH = Path("notebooks/pipeline.ipynb")
 
@@ -170,14 +169,30 @@ Next steps: apply the researched improvements, then stitch events, quality regre
 
 def main() -> int:
     """Write the notebook file from the cell definitions."""
-    notebook = nbformat.v4.new_notebook()
-    notebook.metadata["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
-    notebook.cells = [
-        nbformat.v4.new_markdown_cell(source) if kind == "markdown" else nbformat.v4.new_code_cell(source)
+    cells = [
+        {
+            "cell_type": kind,
+            "metadata": {},
+            "source": source,
+            **({"execution_count": None, "outputs": []} if kind == "code" else {}),
+        }
         for kind, source in CELLS
     ]
+    notebook = {
+        "cells": cells,
+        "metadata": {
+            "kernelspec": {
+                "name": "python3",
+                "display_name": "Python 3",
+                "language": "python",
+            },
+            "language_info": {"name": "python"},
+        },
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(nbformat.writes(notebook), encoding="utf-8")
+    OUTPUT_PATH.write_text(json.dumps(notebook, indent=1), encoding="utf-8")
     print(f"wrote {OUTPUT_PATH}")
     return 0
 
