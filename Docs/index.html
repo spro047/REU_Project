@@ -873,6 +873,103 @@
             white-space: nowrap;
         }
 
+        /* Plain-language project pipeline */
+        .pipeline-intro {
+            max-width: 820px;
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .pipeline-step {
+            display: grid;
+            grid-template-columns: 58px 1fr;
+            gap: var(--spacing-lg);
+            align-items: start;
+            padding: var(--spacing-lg) 0;
+            border-bottom: 1px solid #d4cfc6;
+        }
+
+        .pipeline-step:last-child {
+            border-bottom: none;
+        }
+
+        .pipeline-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--color-border);
+            background: var(--color-accent-light);
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .pipeline-step h3 {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .pipeline-step p {
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--color-text-secondary);
+        }
+
+        .pipeline-callout {
+            background: var(--color-accent-light);
+            border-left: 5px solid var(--color-border);
+            padding: var(--spacing-lg);
+            margin-top: var(--spacing-xl);
+        }
+
+        .pipeline-callout h3 {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .pipeline-callout p {
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .pipeline-box {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-xl);
+        }
+
+        .pipeline-box-item {
+            padding: var(--spacing-md);
+            border: 2px solid #d4cfc6;
+            background: var(--color-cream-card);
+        }
+
+        .pipeline-box-item strong {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .pipeline-box-item span {
+            display: block;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            color: var(--color-text-secondary);
+        }
+
         @media (max-width: 768px) {
             .lit-table th, .lit-table td {
                 padding: var(--spacing-sm);
@@ -880,6 +977,21 @@
             }
             .lit-dropdown-content {
                 padding: 0 var(--spacing-md) var(--spacing-md);
+            }
+
+            .pipeline-step {
+                grid-template-columns: 44px 1fr;
+                gap: var(--spacing-md);
+            }
+
+            .pipeline-number {
+                width: 40px;
+                height: 40px;
+                font-size: 0.9rem;
+            }
+
+            .pipeline-box {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1747,6 +1859,85 @@
                         <li style="padding: var(--spacing-sm) 0;">✦ Addresses the small-dataset gap in literature</li>
                     </ul>
                 </div>
+            </div>
+        </section>
+
+        <section class="section glossary-section section-reveal">
+            <h2>How This Project Works</h2>
+            <p class="pipeline-intro">
+                This project is building a research tool that watches a recorded suturing video and gives simple feedback after each stitch. The goal is not to replace a doctor. The goal is to help students understand their technique and to study whether computer vision can measure suture quality.
+            </p>
+
+            <div class="pipeline-step reveal-stagger">
+                <div class="pipeline-number">01</div>
+                <div>
+                    <h3>Check the Videos</h3>
+                    <p>First, we check the nine videos for clarity, lighting, camera angle, wound visibility, and the number of stitches. This tells us which parts are useful for training.</p>
+                </div>
+            </div>
+
+            <div class="pipeline-step reveal-stagger">
+                <div class="pipeline-number">02</div>
+                <div>
+                    <h3>Turn Videos into Pictures</h3>
+                    <p>We take pictures from the videos at about five frames per second. We also keep extra pictures around important moments, such as when the needle enters, exits, or a knot is formed.</p>
+                </div>
+            </div>
+
+            <div class="pipeline-step reveal-stagger">
+                <div class="pipeline-number">03</div>
+                <div>
+                    <h3>Mark the Pictures in CVAT</h3>
+                    <p>A clinical expert marks the wound, needle, thread, entry and exit points, stitch, knot, and important moments. The expert also gives each stitch six ratings: Overall, ISD, Slack, Position, Angulation, and Width.</p>
+                </div>
+            </div>
+
+            <div class="pipeline-step reveal-stagger">
+                <div class="pipeline-number">04</div>
+                <div>
+                    <h3>Use AI to Help with More Pictures</h3>
+                    <p>At the beginning, the markings are made by people. After the AI learns from a small set of checked pictures, it can suggest markings for more pictures. A human must review and correct every suggestion used for training.</p>
+                </div>
+            </div>
+
+            <div class="pipeline-step reveal-stagger">
+                <div class="pipeline-number">05</div>
+                <div>
+                    <h3>Teach and Test the Model</h3>
+                    <p>The model learns to find the needle, thread, wound, and stitch points. It also learns to recognize needle entry, needle exit, knot formation, and stitch completion. Separate videos are kept aside to test whether it learned rather than memorized.</p>
+                </div>
+            </div>
+
+            <div class="pipeline-step reveal-stagger">
+                <div class="pipeline-number">06</div>
+                <div>
+                    <h3>Create the Feedback Video</h3>
+                    <p>When the model sees that a stitch is complete, it displays a stitch quality score from 1 to 10. It also shows the six individual measurements, the model's confidence, and the stitch number directly on the recorded video.</p>
+                </div>
+            </div>
+
+            <div class="pipeline-box">
+                <div class="pipeline-box-item">
+                    <strong>Suture quality score</strong>
+                    <span>The model's predicted rating from 1 to 10.</span>
+                </div>
+                <div class="pipeline-box-item">
+                    <strong>Model confidence</strong>
+                    <span>How certain the model is about its prediction.</span>
+                </div>
+                <div class="pipeline-box-item">
+                    <strong>Research accuracy</strong>
+                    <span>How closely the model agrees with expert ratings during testing.</span>
+                </div>
+            </div>
+
+            <div class="pipeline-callout">
+                <h3>First Milestone</h3>
+                <p>Before training the final AI model, we must create a clean and trusted picture dataset. That means checking all videos, extracting the frames, marking them in CVAT, reviewing the markings with an expert, and documenting exactly how the dataset was made.</p>
+            </div>
+
+            <div class="insight-box">
+                <p><strong>Important:</strong> This is a pilot research study using a small collection of training videos. The results will help evaluate whether the idea works, but they will not yet prove that the tool is ready for clinical use.</p>
             </div>
         </section>
 

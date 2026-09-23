@@ -22,3 +22,20 @@ Dataset_From_JNMC/
 
 # Agent working directory
 .omo/
+
+# Extracted video frames (too large for git — ~4.8 GB)
+data/frames/
+
+# Raw video zips (too large for git — ~4.8 GB)
+data/zips/
+
+# Playwright tooling artifacts
+.playwright-mcp/
+
+# Secrets
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc

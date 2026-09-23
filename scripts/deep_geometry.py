@@ -27,12 +27,9 @@ from scripts.geometry_baseline import (
     pixel_accuracy,
 )
 
-TRAIN_FRAMES_CAP: int = 400
 VAL_FRACTION: float = 0.1
-EPOCHS: int = 12
 BATCH_SIZE: int = 16
 BASE_CHANNELS: int = 32
-TEST_FRAMES_CAP: int = 60
 COPY_PASTE_PROBABILITY: float = 0.5
 SCE_ALPHA: float = 1.0
 SCE_BETA: float = 0.1
@@ -209,66 +206,53 @@ def mean_iou(predictions: list[np.ndarray], truths: list[np.ndarray]) -> float:
     return float(sums.mean() / max(1, len(predictions)))
 
 
-def main() -> int:
-    """Train the U-Net on the train split and evaluate on the test split."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--manifest", type=Path, default=Path("data/manifests/dataset_manifest.csv")
-    )
-    parser.add_argument(
-        "--annotations-dir", type=Path, default=Path("data/annotations")
-    )
-    parser.add_argument("--frames-dir", type=Path, default=Path("data/frames"))
-    parser.add_argument("--report", type=Path, default=Path("reports/geometry-deep.md"))
-    parser.add_argument(
-        "--preview", type=Path, default=Path("data/annotations/previews/deep-test.png")
-    )
-    parser.add_argument(
-        "--checkpoint", type=Path, default=Path("data/models/geometry_unet.pt")
-    )
-    parser.add_argument("--clahe", action="store_true")
-    parser.add_argument("--no-sce", action="store_true")
-    parser.add_argument("--no-copy-paste", action="store_true")
-    args = parser.parse_args()
-    torch.manual_seed(0)
-    np.random.seed(0)
-    with args.manifest.open(encoding="utf-8") as handle:
-        rows = [row for row in csv.DictReader(handle) if row["status"] == "selected"]
-    train_rows = [
-        row for row in rows if row["split"] == "train" and row["annotated"] == "True"
-    ]
-    test_rows = [
-        row for row in rows if row["split"] == "test" and row["annotated"] == "True"
-    ]
-    train_rows = train_rows[:TRAIN_FRAMES_CAP]
-    split_point = max(1, int(len(train_rows) * (1 - VAL_FRACTION)))
-    train_split, val_split = train_rows[:split_point], train_rows[split_point:]
-
-    def build_inputs(
-        frame_rows: list[dict[str, str]],
-    ) -> tuple[list[torch.Tensor], list[np.ndarray]]:
-        inputs: list[torch.Tensor] = []
-        masks: list[np.ndarray] = []
-        for row in frame_rows:
-            frame_name = Path(row["output_path"]).name
-            inputs.append(
-                load_frame_tensor(
-                    row["video_id"], frame_name, args.frames_dir, use_clahe=args.clahe
-                )
+def run_seed(
+    args: argparse.Namespace,
+    seed: int,
+    train_split: list[dict[str, str]],
+    val_split: list[dict[str, str]],
+    test_rows: list[dict[str, str]],
+) -> tuple[dict[str, float], list[np.ndarray], dict[str, torch.Tensor]]:
+    """Train and evaluate one seed; return metrics, previews, and best state."""
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    train_inputs: list[torch.Tensor] = []
+    train_masks: list[np.ndarray] = []
+    val_inputs: list[torch.Tensor] = []
+    val_masks: list[np.ndarray] = []
+    for row in train_split:
+        frame_name = Path(row["output_path"]).name
+        train_inputs.append(
+            load_frame_tensor(
+                row["video_id"], frame_name, args.frames_dir, use_clahe=args.clahe
             )
-            shapes = load_annotation(row["video_id"], frame_name, args.annotations_dir)
-            masks.append(build_class_mask(shapes, GRID_SIZE))
-        return inputs, masks
-
-    train_inputs, train_masks = build_inputs(train_split)
-    val_inputs, val_masks = build_inputs(val_split)
+        )
+        train_masks.append(
+            build_class_mask(
+                load_annotation(row["video_id"], frame_name, args.annotations_dir),
+                GRID_SIZE,
+            )
+        )
+    for row in val_split:
+        frame_name = Path(row["output_path"]).name
+        val_inputs.append(
+            load_frame_tensor(
+                row["video_id"], frame_name, args.frames_dir, use_clahe=args.clahe
+            )
+        )
+        val_masks.append(
+            build_class_mask(
+                load_annotation(row["video_id"], frame_name, args.annotations_dir),
+                GRID_SIZE,
+            )
+        )
     model = TinyUNet()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     weights = class_weights(train_masks)
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(seed)
     best_state: dict[str, torch.Tensor] | None = None
     best_score = -1.0
-    for epoch in range(EPOCHS):
+    for epoch in range(args.epochs):
         model.train()
         permutation = torch.randperm(len(train_inputs))
         for start in range(0, len(permutation), BATCH_SIZE):
@@ -295,22 +279,20 @@ def main() -> int:
                 logits = model(frame.unsqueeze(0))
                 val_predictions.append(logits.argmax(dim=1)[0].numpy())
         score = mean_iou(val_predictions, val_masks)
-        print(f"epoch={epoch + 1}/{EPOCHS} val_mean_iou={score:.4f}")
+        print(f"seed={seed} epoch={epoch + 1}/{args.epochs} val_mean_iou={score:.4f}")
         if score > best_score:
             best_score = score
             best_state = {
                 key: value.clone() for key, value in model.state_dict().items()
             }
     assert best_state is not None
-    args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(best_state, args.checkpoint)
     model.load_state_dict(best_state)
     model.eval()
     test_truths: list[np.ndarray] = []
     test_predictions: list[np.ndarray] = []
     preview_frames: list[np.ndarray] = []
     with torch.no_grad():
-        for row in test_rows[:TEST_FRAMES_CAP]:
+        for row in test_rows[: args.test_cap]:
             frame_name = Path(row["output_path"]).name
             frame = cv2.imread(
                 str(frame_path(row["video_id"], frame_name, args.frames_dir))
@@ -326,8 +308,10 @@ def main() -> int:
                 ).unsqueeze(0)
             )
             prediction = logits.argmax(dim=1)[0].numpy()
-            shapes = load_annotation(row["video_id"], frame_name, args.annotations_dir)
-            truth = build_class_mask(shapes, GRID_SIZE)
+            truth = build_class_mask(
+                load_annotation(row["video_id"], frame_name, args.annotations_dir),
+                GRID_SIZE,
+            )
             test_predictions.append(prediction)
             test_truths.append(truth)
             if len(preview_frames) < 12:
@@ -341,21 +325,82 @@ def main() -> int:
                 overlay[upscaled == 2] = (0, 255, 0)
                 overlay[upscaled == 3] = (0, 0, 255)
                 preview_frames.append(cv2.addWeighted(frame, 0.6, overlay, 0.4, 0))
-    accuracy = pixel_accuracy(np.stack(test_predictions), np.stack(test_truths))
+    prediction_all = np.stack(test_predictions)
+    truth_all = np.stack(test_truths)
+    metrics = {"accuracy": pixel_accuracy(prediction_all, truth_all)}
+    for class_id, name in enumerate(CLASS_NAMES):
+        metrics[name] = class_iou(prediction_all, truth_all, class_id)
+    return metrics, preview_frames, best_state
+
+
+def main() -> int:
+    """Train the U-Net across seeds and evaluate on the test split."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--manifest", type=Path, default=Path("data/manifests/dataset_manifest.csv")
+    )
+    parser.add_argument(
+        "--annotations-dir", type=Path, default=Path("data/annotations")
+    )
+    parser.add_argument("--frames-dir", type=Path, default=Path("data/frames"))
+    parser.add_argument("--report", type=Path, default=Path("reports/geometry-deep.md"))
+    parser.add_argument(
+        "--preview", type=Path, default=Path("data/annotations/previews/deep-test.png")
+    )
+    parser.add_argument(
+        "--checkpoint", type=Path, default=Path("data/models/geometry_unet.pt")
+    )
+    parser.add_argument("--clahe", action="store_true")
+    parser.add_argument("--no-sce", action="store_true")
+    parser.add_argument("--no-copy-paste", action="store_true")
+    parser.add_argument("--train-cap", type=int, default=0)
+    parser.add_argument("--epochs", type=int, default=12)
+    parser.add_argument("--seeds", type=int, default=3)
+    parser.add_argument("--test-cap", type=int, default=300)
+    args = parser.parse_args()
+    with args.manifest.open(encoding="utf-8") as handle:
+        rows = [row for row in csv.DictReader(handle) if row["status"] == "selected"]
+    train_rows = [
+        row for row in rows if row["split"] == "train" and row["annotated"] == "True"
+    ]
+    test_rows = [
+        row for row in rows if row["split"] == "test" and row["annotated"] == "True"
+    ]
+    if args.train_cap > 0:
+        train_rows = train_rows[: args.train_cap]
+    split_point = max(1, int(len(train_rows) * (1 - VAL_FRACTION)))
+    train_split, val_split = train_rows[:split_point], train_rows[split_point:]
+    all_metrics: list[dict[str, float]] = []
+    final_state: dict[str, torch.Tensor] | None = None
+    preview_frames: list[np.ndarray] = []
+    for seed in range(args.seeds):
+        metrics, seed_previews, state = run_seed(
+            args, seed, train_split, val_split, test_rows
+        )
+        all_metrics.append(metrics)
+        final_state = state
+        preview_frames = seed_previews
+    assert final_state is not None
+    args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(final_state, args.checkpoint)
+    mean: dict[str, float] = {}
+    spread: dict[str, float] = {}
+    for key in all_metrics[0]:
+        values = np.array([metrics[key] for metrics in all_metrics])
+        mean[key] = float(values.mean())
+        spread[key] = float(values.std())
     lines = [
         "# Deep Geometry Baseline Report",
         "",
-        f"Model: TinyUNet ({sum(p.numel() for p in model.parameters()):,} params), CPU, {GRID_SIZE}x{GRID_SIZE}",
+        f"Model: TinyUNet ({sum(p.numel() for p in TinyUNet().parameters()):,} params), CPU, {GRID_SIZE}x{GRID_SIZE}",
         f"Config: clahe={args.clahe} sce={not args.no_sce} copy_paste={not args.no_copy_paste}",
-        f"Train frames: {len(train_split)} (capped {TRAIN_FRAMES_CAP}), val: {len(val_split)}, test: {len(test_truths)}",
-        f"Best val mean IoU: {best_score:.4f}",
-        f"Pixel accuracy (test): {accuracy:.4f}",
+        f"Train frames: {len(train_split)}, val: {len(val_split)}, test: {args.test_cap}, seeds: {args.seeds}, epochs: {args.epochs}",
         "",
-        "| Class | IoU |",
+        "| Metric | mean +/- std |",
         "| --- | ---: |",
         *[
-            f"| {name} | {class_iou(np.stack(test_predictions), np.stack(test_truths), class_id):.4f} |"
-            for class_id, name in enumerate(CLASS_NAMES)
+            f"| {name} | {mean[name]:.4f} +/- {spread[name]:.4f} |"
+            for name in ("accuracy", *CLASS_NAMES)
         ],
         "",
         "## vs RandomForest baseline (reports/geometry-baseline.md)",
@@ -378,13 +423,9 @@ def main() -> int:
             )
         args.preview.parent.mkdir(parents=True, exist_ok=True)
         _ = cv2.imwrite(str(args.preview), sheet)
-    print(
-        f"accuracy={accuracy:.4f} "
-        + " ".join(
-            f"{name}={class_iou(np.stack(test_predictions), np.stack(test_truths), c):.3f}"
-            for c, name in enumerate(CLASS_NAMES)
-        )
-    )
+    print(f"accuracy={mean['accuracy']:.4f} +/- {spread['accuracy']:.4f}")
+    for name in CLASS_NAMES:
+        print(f"{name}={mean[name]:.4f} +/- {spread[name]:.4f}")
     return 0
 
 
